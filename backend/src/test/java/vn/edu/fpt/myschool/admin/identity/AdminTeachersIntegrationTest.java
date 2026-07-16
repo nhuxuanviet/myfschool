@@ -89,7 +89,7 @@ class AdminTeachersIntegrationTest {
                 .andExpect(jsonPath("$.items[0].teacherCode").value("GV100"))
                 .andExpect(jsonPath("$.items[0].hasAccount").value(false))
                 .andExpect(jsonPath("$.items[0].phoneNumber").doesNotExist())
-                .andExpect(jsonPath("$.totalItems").value(1));
+                .andExpect(jsonPath("$.totalElements").value(1));
 
         Integer audits = jdbcTemplate.queryForObject(
                 """
@@ -160,13 +160,13 @@ class AdminTeachersIntegrationTest {
                         .param("hasAccount", "false")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalItems").value(1));
+                .andExpect(jsonPath("$.totalElements").value(1));
 
         mockMvc.perform(get("/api/v1/admin/teachers")
                         .param("hasAccount", "true")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalItems").value(0));
+                .andExpect(jsonPath("$.totalElements").value(0));
     }
 
     @Test

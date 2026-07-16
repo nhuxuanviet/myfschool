@@ -8,6 +8,7 @@ import { NotFoundPage } from './pages/NotFoundPage';
 
 const DashboardPage = lazy(() => import('./pages/DashboardPage').then((module) => ({ default: module.DashboardPage })));
 const StudentsPage = lazy(() => import('./pages/StudentsPage').then((module) => ({ default: module.StudentsPage })));
+const TeachersPage = lazy(() => import('./pages/TeachersPage').then((module) => ({ default: module.TeachersPage })));
 const AcademicsPage = lazy(() => import('./pages/AcademicsPage').then((module) => ({ default: module.AcademicsPage })));
 const TimetableAdminPage = lazy(() => import('./pages/TimetableAdminPage').then((module) => ({ default: module.TimetableAdminPage })));
 const GradesAdminPage = lazy(() => import('./pages/GradesAdminPage').then((module) => ({ default: module.GradesAdminPage })));
@@ -46,6 +47,7 @@ function ProtectedRoutes() {
         <Routes>
           <Route index element={<DashboardPage />} />
           <Route path="students" element={<StudentsPage />} />
+          <Route path="teachers" element={<TeachersPage />} />
           <Route path="academics" element={<AcademicsPage />} />
           <Route path="timetable" element={<TimetableAdminPage />} />
           <Route path="grades" element={<GradesAdminPage />} />

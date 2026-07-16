@@ -6,7 +6,7 @@ import java.util.UUID;
 import vn.edu.fpt.myschool.admin.identity.domain.AdminIdentity;
 
 public record AdminTeachersResponse(
-        List<Item> items, int page, int size, long totalItems, int totalPages) {
+        List<Item> items, int page, int size, long totalElements, int totalPages) {
 
     public record Item(
             UUID id,
@@ -36,7 +36,7 @@ public record AdminTeachersResponse(
                 page.items().stream().map(Item::from).toList(),
                 page.page(),
                 page.size(),
-                page.totalItems(),
+                page.totalElements(),
                 page.totalPages());
     }
 }

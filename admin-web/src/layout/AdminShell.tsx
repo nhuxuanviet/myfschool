@@ -52,6 +52,7 @@ const navigation = [
   ] },
   { section: 'QUẢN LÝ', items: [
     { label: 'Học sinh', path: '/students', icon: <PeopleAltOutlinedIcon /> },
+    { label: 'Giáo viên', path: '/teachers', icon: <SchoolOutlinedIcon /> },
     { label: 'Học vụ', path: '/academics', icon: <SchoolOutlinedIcon /> },
     { label: 'Lịch học', path: '/timetable', icon: <CalendarMonthOutlinedIcon /> },
     { label: 'Điểm số', path: '/grades', icon: <AssessmentOutlinedIcon /> },

@@ -36,17 +36,17 @@ public final class AdminIdentity {
         }
     }
 
-    public record TeacherPage(List<Teacher> items, int page, int size, long totalItems) {
+    public record TeacherPage(List<Teacher> items, int page, int size, long totalElements) {
 
         public TeacherPage {
             items = List.copyOf(Objects.requireNonNull(items, "items must not be null"));
-            if (page < 0 || size <= 0 || totalItems < 0) {
-                throw new IllegalArgumentException("page, size and totalItems must be non-negative");
+            if (page < 0 || size <= 0 || totalElements < 0) {
+                throw new IllegalArgumentException("page, size and totalElements must be non-negative");
             }
         }
 
         public int totalPages() {
-            return (int) Math.ceil((double) totalItems / size);
+            return (int) Math.ceil((double) totalElements / size);
         }
     }
 
@@ -74,17 +74,17 @@ public final class AdminIdentity {
         }
     }
 
-    public record ParentPage(List<Parent> items, int page, int size, long totalItems) {
+    public record ParentPage(List<Parent> items, int page, int size, long totalElements) {
 
         public ParentPage {
             items = List.copyOf(Objects.requireNonNull(items, "items must not be null"));
-            if (page < 0 || size <= 0 || totalItems < 0) {
-                throw new IllegalArgumentException("page, size and totalItems must be non-negative");
+            if (page < 0 || size <= 0 || totalElements < 0) {
+                throw new IllegalArgumentException("page, size and totalElements must be non-negative");
             }
         }
 
         public int totalPages() {
-            return (int) Math.ceil((double) totalItems / size);
+            return (int) Math.ceil((double) totalElements / size);
         }
     }
 
