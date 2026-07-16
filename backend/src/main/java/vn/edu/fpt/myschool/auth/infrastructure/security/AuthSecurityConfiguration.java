@@ -111,6 +111,10 @@ public class AuthSecurityConfiguration {
                         .hasRole(UserRole.STUDENT.name())
                         .requestMatchers("/api/v1/assistant", "/api/v1/assistant/**")
                         .hasRole(UserRole.STUDENT.name())
+                        .requestMatchers("/api/v1/teacher", "/api/v1/teacher/**")
+                        .hasRole(UserRole.TEACHER.name())
+                        .requestMatchers("/api/v1/parent", "/api/v1/parent/**")
+                        .hasRole(UserRole.PARENT.name())
                         .requestMatchers("/api/v1/admin", "/api/v1/admin/**")
                         .hasRole(UserRole.ADMIN.name())
                         .anyRequest().denyAll());
