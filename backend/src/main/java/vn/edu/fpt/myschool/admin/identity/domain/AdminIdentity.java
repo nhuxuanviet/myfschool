@@ -1,5 +1,6 @@
 package vn.edu.fpt.myschool.admin.identity.domain;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -46,6 +47,85 @@ public final class AdminIdentity {
 
         public int totalPages() {
             return (int) Math.ceil((double) totalItems / size);
+        }
+    }
+
+    /** @param userId null while the guardian has been entered but not given an account. */
+    public record Parent(
+            UUID id,
+            UUID userId,
+            String fullName,
+            String email,
+            String phoneNumber,
+            boolean enabled,
+            long version,
+            int linkedStudents) {
+
+        public Parent {
+            Objects.requireNonNull(id, "id must not be null");
+            requireText(fullName, "fullName");
+            if (linkedStudents < 0) {
+                throw new IllegalArgumentException("linkedStudents must not be negative");
+            }
+        }
+
+        public boolean hasAccount() {
+            return userId != null;
+        }
+    }
+
+    public record ParentPage(List<Parent> items, int page, int size, long totalItems) {
+
+        public ParentPage {
+            items = List.copyOf(Objects.requireNonNull(items, "items must not be null"));
+            if (page < 0 || size <= 0 || totalItems < 0) {
+                throw new IllegalArgumentException("page, size and totalItems must be non-negative");
+            }
+        }
+
+        public int totalPages() {
+            return (int) Math.ceil((double) totalItems / size);
+        }
+    }
+
+    public enum Relationship {
+        FATHER,
+        MOTHER,
+        GUARDIAN
+    }
+
+    /**
+     * @param effectiveTo null while the link is in force. Ended links are kept rather than deleted,
+     *     because who could see a child's data, and until when, is an accountability record.
+     */
+    public record GuardianLink(
+            UUID id,
+            UUID parentId,
+            String parentFullName,
+            UUID studentId,
+            String studentFullName,
+            String studentCode,
+            Relationship relationship,
+            int contactOrder,
+            LocalDate effectiveFrom,
+            LocalDate effectiveTo) {
+
+        public GuardianLink {
+            Objects.requireNonNull(id, "id must not be null");
+            Objects.requireNonNull(parentId, "parentId must not be null");
+            Objects.requireNonNull(studentId, "studentId must not be null");
+            Objects.requireNonNull(relationship, "relationship must not be null");
+            Objects.requireNonNull(effectiveFrom, "effectiveFrom must not be null");
+            if (contactOrder < 1) {
+                throw new IllegalArgumentException("contactOrder must be at least 1");
+            }
+            if (effectiveTo != null && !effectiveTo.isAfter(effectiveFrom)) {
+                throw new IllegalArgumentException("effectiveTo must be after effectiveFrom");
+            }
+        }
+
+        public boolean isInForce() {
+            return effectiveTo == null;
         }
     }
 

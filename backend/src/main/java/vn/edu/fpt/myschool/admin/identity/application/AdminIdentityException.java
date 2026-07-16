@@ -27,4 +27,52 @@ public final class AdminIdentityException extends ApiException {
                 "TEACHER_VERSION_CONFLICT",
                 "Teacher was changed by someone else. Reload and try again");
     }
+
+    static AdminIdentityException parentNotFound() {
+        return new AdminIdentityException(
+                HttpStatus.NOT_FOUND, "PARENT_NOT_FOUND", "Guardian does not exist");
+    }
+
+    static AdminIdentityException staleParent() {
+        return new AdminIdentityException(
+                HttpStatus.CONFLICT,
+                "PARENT_VERSION_CONFLICT",
+                "Guardian was changed by someone else. Reload and try again");
+    }
+
+    static AdminIdentityException phoneNumberTaken() {
+        return new AdminIdentityException(
+                HttpStatus.CONFLICT, "PHONE_NUMBER_TAKEN", "Phone number already has an account");
+    }
+
+    static AdminIdentityException studentNotFound() {
+        return new AdminIdentityException(
+                HttpStatus.NOT_FOUND, "STUDENT_NOT_FOUND", "Student does not exist");
+    }
+
+    static AdminIdentityException linkAlreadyInForce() {
+        return new AdminIdentityException(
+                HttpStatus.CONFLICT,
+                "GUARDIAN_LINK_EXISTS",
+                "This guardian is already linked to this student");
+    }
+
+    static AdminIdentityException linkNotInForce() {
+        return new AdminIdentityException(
+                HttpStatus.CONFLICT,
+                "GUARDIAN_LINK_NOT_IN_FORCE",
+                "Link does not exist, has already ended, or would end before it started");
+    }
+
+    static AdminIdentityException weakPassword() {
+        return new AdminIdentityException(
+                HttpStatus.BAD_REQUEST,
+                "WEAK_PASSWORD",
+                "Initial password does not meet the password policy");
+    }
+
+    static AdminIdentityException invalidPhoneNumber() {
+        return new AdminIdentityException(
+                HttpStatus.BAD_REQUEST, "INVALID_PHONE_NUMBER", "Phone number is not a valid Vietnamese number");
+    }
 }

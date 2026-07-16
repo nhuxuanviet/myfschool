@@ -1,6 +1,8 @@
 package vn.edu.fpt.myschool.admin.identity.application.port;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -30,6 +32,50 @@ public interface AdminIdentityStore {
             boolean enabled,
             long expectedVersion,
             Instant now);
+
+    AdminIdentity.ParentPage findParents(String query, Boolean enabled, int page, int size, String sort);
+
+    Optional<AdminIdentity.Parent> findParent(UUID parentId);
+
+    boolean phoneNumberExists(String phoneNumber);
+
+    /**
+     * Creates a guardian profile, and an account for them when a phone number is supplied.
+     *
+     * <p>Both rows are written together with the PARENT role: an account without its role row
+     * cannot be loaded at all.
+     */
+    UUID createParent(
+            String fullName,
+            String email,
+            String phoneNumber,
+            String passwordHash,
+            Instant now);
+
+    boolean updateParent(
+            UUID parentId,
+            String fullName,
+            String email,
+            boolean enabled,
+            long expectedVersion,
+            Instant now);
+
+    List<AdminIdentity.GuardianLink> findLinks(UUID parentId, UUID studentId, boolean inForceOnly);
+
+    boolean studentExists(UUID studentId);
+
+    boolean linkInForceExists(UUID parentId, UUID studentId);
+
+    UUID createLink(
+            UUID parentId,
+            UUID studentId,
+            AdminIdentity.Relationship relationship,
+            int contactOrder,
+            LocalDate effectiveFrom,
+            Instant now);
+
+    /** Ends a link by dating it, never by deleting the row. */
+    boolean endLink(UUID linkId, LocalDate effectiveTo, Instant now);
 
     void recordAudit(
             UUID actorUserId,
