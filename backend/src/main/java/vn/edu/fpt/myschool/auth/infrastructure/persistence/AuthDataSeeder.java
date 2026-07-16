@@ -36,6 +36,7 @@ class AuthDataSeeder implements ApplicationRunner {
 
     private final UserJpaRepository userRepository;
     private final StudentJpaRepository studentRepository;
+    private final UserRoleGranter userRoleGranter;
     private final PasswordEncoder passwordEncoder;
     private final AuthSeedProperties properties;
     private final Clock clock;
@@ -43,11 +44,13 @@ class AuthDataSeeder implements ApplicationRunner {
     AuthDataSeeder(
             UserJpaRepository userRepository,
             StudentJpaRepository studentRepository,
+            UserRoleGranter userRoleGranter,
             PasswordEncoder passwordEncoder,
             AuthSeedProperties properties,
             Clock clock) {
         this.userRepository = userRepository;
         this.studentRepository = studentRepository;
+        this.userRoleGranter = userRoleGranter;
         this.passwordEncoder = passwordEncoder;
         this.properties = properties;
         this.clock = clock;
@@ -59,6 +62,7 @@ class AuthDataSeeder implements ApplicationRunner {
         String phoneNumber = VietnamesePhoneNumber.normalize(properties.phoneNumber()).value();
         UserJpaEntity user = userRepository.findByPhoneNumber(phoneNumber)
                 .orElseGet(() -> createUser(phoneNumber));
+        userRoleGranter.grant(user.getId(), UserRole.STUDENT);
         synchronizeSeedPassword(user);
         studentRepository.findByUserId(user.getId()).ifPresentOrElse(
                 this::updateStudent,
@@ -106,6 +110,7 @@ class AuthDataSeeder implements ApplicationRunner {
     private void seedPeerStudent() {
         UserJpaEntity user = userRepository.findByPhoneNumber(PEER_PHONE_NUMBER)
                 .orElseGet(this::createPeerUser);
+        userRoleGranter.grant(user.getId(), UserRole.STUDENT);
         synchronizeSeedPassword(user);
         if (studentRepository.findByUserId(user.getId()).isEmpty()) {
             studentRepository.save(new StudentJpaEntity(

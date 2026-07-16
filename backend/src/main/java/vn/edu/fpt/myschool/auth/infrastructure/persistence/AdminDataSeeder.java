@@ -27,6 +27,7 @@ class AdminDataSeeder implements ApplicationRunner {
 
     private final UserJpaRepository userRepository;
     private final AdminProfileJpaRepository adminProfileRepository;
+    private final UserRoleGranter userRoleGranter;
     private final PasswordEncoder passwordEncoder;
     private final AdminSeedProperties properties;
     private final Clock clock;
@@ -34,11 +35,13 @@ class AdminDataSeeder implements ApplicationRunner {
     AdminDataSeeder(
             UserJpaRepository userRepository,
             AdminProfileJpaRepository adminProfileRepository,
+            UserRoleGranter userRoleGranter,
             PasswordEncoder passwordEncoder,
             AdminSeedProperties properties,
             Clock clock) {
         this.userRepository = userRepository;
         this.adminProfileRepository = adminProfileRepository;
+        this.userRoleGranter = userRoleGranter;
         this.passwordEncoder = passwordEncoder;
         this.properties = properties;
         this.clock = clock;
@@ -53,6 +56,7 @@ class AdminDataSeeder implements ApplicationRunner {
         if (user.getRole() != UserRole.ADMIN) {
             throw new IllegalStateException("Admin seed phone belongs to a non-admin user");
         }
+        userRoleGranter.grant(user.getId(), UserRole.ADMIN);
         synchronizePassword(user);
         adminProfileRepository.findByUserId(user.getId()).ifPresentOrElse(
                 profile -> profile.updateFullName(properties.fullName(), clock.instant()),
