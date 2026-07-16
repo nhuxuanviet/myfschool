@@ -71,7 +71,11 @@ class AdminAuthIntegrationTest {
         assertThat(body).doesNotContain("refreshToken").doesNotContain(refreshCookie.getValue());
         assertThat(JsonPath.<String>read(body, "$.csrfToken")).isEqualTo(csrfCookie.getValue());
         assertThat(jwt.getClaimAsString("role")).isEqualTo("ADMIN");
-        assertThat(jwt.hasClaim("adminId")).isTrue();
+        // The token carries the user id and the active role, and nothing else. Business
+        // identifiers are resolved from the authenticated principal on each request, so a
+        // token can never be the reason a caller reaches another person's data.
+        assertThat(jwt.getSubject()).isNotBlank();
+        assertThat(jwt.hasClaim("adminId")).isFalse();
         assertThat(jwt.hasClaim("studentId")).isFalse();
         assertThat(result.getResponse().getHeaders(HttpHeaders.SET_COOKIE))
                 .anySatisfy(header -> assertThat(header)

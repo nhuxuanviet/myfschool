@@ -12,6 +12,8 @@ import vn.edu.fpt.myschool.auth.application.port.AdminLoginAttemptStore;
 import vn.edu.fpt.myschool.auth.application.port.SecretTokenService;
 import vn.edu.fpt.myschool.auth.application.port.SecurityAuditStore;
 import vn.edu.fpt.myschool.auth.application.port.UserAccountStore;
+import vn.edu.fpt.myschool.auth.application.port.UserProfileStore;
+import vn.edu.fpt.myschool.auth.domain.AdminProfile;
 import vn.edu.fpt.myschool.auth.domain.UserAccount;
 import vn.edu.fpt.myschool.auth.domain.UserRole;
 import vn.edu.fpt.myschool.auth.domain.VietnamesePhoneNumber;
@@ -28,6 +30,7 @@ public class AdminAuthService {
 
     private final AuthService authService;
     private final UserAccountStore userAccountStore;
+    private final UserProfileStore userProfileStore;
     private final AdminLoginAttemptStore loginAttemptStore;
     private final SecurityAuditStore securityAuditStore;
     private final SecretTokenService secretTokenService;
@@ -37,6 +40,7 @@ public class AdminAuthService {
     public AdminAuthService(
             AuthService authService,
             UserAccountStore userAccountStore,
+            UserProfileStore userProfileStore,
             AdminLoginAttemptStore loginAttemptStore,
             SecurityAuditStore securityAuditStore,
             SecretTokenService secretTokenService,
@@ -44,6 +48,7 @@ public class AdminAuthService {
             Clock clock) {
         this.authService = authService;
         this.userAccountStore = userAccountStore;
+        this.userProfileStore = userProfileStore;
         this.loginAttemptStore = loginAttemptStore;
         this.securityAuditStore = securityAuditStore;
         this.secretTokenService = secretTokenService;
@@ -100,11 +105,16 @@ public class AdminAuthService {
     }
 
     @Transactional(readOnly = true)
-    public UserAccount getAccount(UUID userId) {
-        return userAccountStore.findById(userId)
+    public AuthenticatedAdmin getAccount(UUID userId) {
+        UserAccount account = userAccountStore.findById(userId)
                 .filter(UserAccount::enabled)
-                .filter(account -> account.role() == UserRole.ADMIN)
+                .filter(candidate -> candidate.hasRole(UserRole.ADMIN))
                 .orElseThrow(AdminSessionException::missingRefreshToken);
+        AdminProfile profile = userProfileStore.findProfile(account.id(), UserRole.ADMIN)
+                .filter(AdminProfile.class::isInstance)
+                .map(AdminProfile.class::cast)
+                .orElseThrow(AdminSessionException::missingRefreshToken);
+        return new AuthenticatedAdmin(account, profile);
     }
 
     private String identifierHash(String phoneNumber) {

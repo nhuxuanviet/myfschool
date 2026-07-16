@@ -13,9 +13,11 @@ import vn.edu.fpt.myschool.auth.application.port.AccessTokenIssuer;
 import vn.edu.fpt.myschool.auth.application.port.RefreshSessionStore;
 import vn.edu.fpt.myschool.auth.application.port.SecretTokenService;
 import vn.edu.fpt.myschool.auth.application.port.UserAccountStore;
+import vn.edu.fpt.myschool.auth.application.port.UserProfileStore;
 import vn.edu.fpt.myschool.auth.domain.PasswordPolicy;
 import vn.edu.fpt.myschool.auth.domain.RefreshSession;
 import vn.edu.fpt.myschool.auth.domain.UserAccount;
+import vn.edu.fpt.myschool.auth.domain.UserProfile;
 import vn.edu.fpt.myschool.auth.domain.UserRole;
 import vn.edu.fpt.myschool.auth.domain.VietnamesePhoneNumber;
 
@@ -27,6 +29,7 @@ public class AuthService {
     private static final String LOGOUT_REASON = "LOGOUT";
 
     private final UserAccountStore userAccountStore;
+    private final UserProfileStore userProfileStore;
     private final RefreshSessionStore refreshSessionStore;
     private final AccessTokenIssuer accessTokenIssuer;
     private final SecretTokenService secretTokenService;
@@ -37,6 +40,7 @@ public class AuthService {
 
     public AuthService(
             UserAccountStore userAccountStore,
+            UserProfileStore userProfileStore,
             RefreshSessionStore refreshSessionStore,
             AccessTokenIssuer accessTokenIssuer,
             SecretTokenService secretTokenService,
@@ -44,6 +48,7 @@ public class AuthService {
             AuthProperties properties,
             Clock clock) {
         this.userAccountStore = userAccountStore;
+        this.userProfileStore = userProfileStore;
         this.refreshSessionStore = refreshSessionStore;
         this.accessTokenIssuer = accessTokenIssuer;
         this.secretTokenService = secretTokenService;
@@ -76,10 +81,10 @@ public class AuthService {
                 || !passwordLengthValid
                 || !passwordMatches
                 || !account.orElseThrow().enabled()
-                || account.orElseThrow().role() != expectedRole) {
+                || !account.orElseThrow().hasRole(expectedRole)) {
             throw AuthException.invalidCredentials();
         }
-        return issueSession(account.orElseThrow(), UUID.randomUUID(), null);
+        return issueSession(account.orElseThrow(), expectedRole, UUID.randomUUID(), null);
     }
 
     @Transactional(noRollbackFor = AuthException.class)
@@ -96,7 +101,7 @@ public class AuthService {
                 .orElseThrow(AuthException::invalidRefreshToken);
         UserAccount account = userAccountStore.findByIdForUpdate(userId)
                 .filter(UserAccount::enabled)
-                .filter(candidate -> candidate.role() == expectedRole)
+                .filter(candidate -> candidate.hasRole(expectedRole))
                 .orElseThrow(AuthException::invalidRefreshToken);
         RefreshSession currentSession = refreshSessionStore
                 .findByTokenHashForUpdate(tokenHash)
@@ -118,7 +123,7 @@ public class AuthService {
         }
 
         refreshSessionStore.markUsed(currentSession.id(), now);
-        return issueSession(account, currentSession.familyId(), currentSession.id());
+        return issueSession(account, expectedRole, currentSession.familyId(), currentSession.id());
     }
 
     @Transactional
@@ -131,8 +136,12 @@ public class AuthService {
 
     private AuthenticationResult issueSession(
             UserAccount account,
+            UserRole activeRole,
             UUID familyId,
             UUID parentSessionId) {
+        UserProfile profile = userProfileStore.findProfile(account.id(), activeRole)
+                .orElseThrow(() -> new IllegalStateException(
+                        "Profile is missing for role " + activeRole));
         Instant now = clock.instant();
         String refreshToken = secretTokenService.generateToken();
         RefreshSession refreshSession = new RefreshSession(
@@ -147,11 +156,14 @@ public class AuthService {
                 now);
         refreshSessionStore.create(refreshSession);
 
-        AccessTokenIssuer.IssuedAccessToken accessToken = accessTokenIssuer.issue(account);
+        AccessTokenIssuer.IssuedAccessToken accessToken =
+                accessTokenIssuer.issue(account, activeRole);
         return new AuthenticationResult(
                 accessToken.value(),
                 refreshToken,
                 accessToken.expiresIn(),
-                account);
+                account,
+                activeRole,
+                profile);
     }
 }

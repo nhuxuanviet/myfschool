@@ -13,6 +13,6 @@ public record AdminSessionResponse(
                 result.accessToken(),
                 result.expiresIn(),
                 csrfToken,
-                AdminAccountResponse.from(result.account()));
+                AdminAccountResponse.from(result.admin()));
     }
 }

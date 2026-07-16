@@ -386,6 +386,15 @@ class JdbcAdminAcademicsStore implements AdminAcademicsStore {
                 ) VALUES (?, ?, ?, 'STUDENT', TRUE, ?, ?, ?)
                 """,
                 userId, phoneNumber, passwordHash, timestamp, timestamp, timestamp);
+        // user_roles is the source of truth for authorisation, so it must be written in the
+        // same transaction that creates the account. An account with no role row cannot be
+        // loaded at all.
+        jdbcTemplate.update(
+                """
+                INSERT INTO user_roles (user_id, role, created_at)
+                VALUES (?, 'STUDENT', ?)
+                """,
+                userId, timestamp);
         jdbcTemplate.update(
                 """
                 INSERT INTO students (

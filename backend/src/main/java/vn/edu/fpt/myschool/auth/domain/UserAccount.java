@@ -1,41 +1,34 @@
 package vn.edu.fpt.myschool.auth.domain;
 
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
+/**
+ * An authenticated identity and the roles it holds.
+ *
+ * <p>Profiles are deliberately absent. One account may hold several roles, so there is no single
+ * profile that belongs to it; each role's profile is resolved from its own store once the active
+ * role is known.
+ */
 public record UserAccount(
         UUID id,
         String phoneNumber,
         String passwordHash,
-        UserRole role,
-        boolean enabled,
-        UserProfile profile) {
+        Set<UserRole> roles,
+        boolean enabled) {
 
     public UserAccount {
         Objects.requireNonNull(id, "id must not be null");
         Objects.requireNonNull(phoneNumber, "phoneNumber must not be null");
         Objects.requireNonNull(passwordHash, "passwordHash must not be null");
-        Objects.requireNonNull(role, "role must not be null");
-        Objects.requireNonNull(profile, "profile must not be null");
-        if (role == UserRole.STUDENT && !(profile instanceof StudentProfile)) {
-            throw new IllegalArgumentException("Student users require a student profile");
-        }
-        if (role == UserRole.ADMIN && !(profile instanceof AdminProfile)) {
-            throw new IllegalArgumentException("Admin users require an admin profile");
+        roles = Set.copyOf(Objects.requireNonNull(roles, "roles must not be null"));
+        if (roles.isEmpty()) {
+            throw new IllegalArgumentException("User account requires at least one role");
         }
     }
 
-    public StudentProfile student() {
-        if (profile instanceof StudentProfile studentProfile) {
-            return studentProfile;
-        }
-        throw new IllegalStateException("User account is not a student");
-    }
-
-    public AdminProfile admin() {
-        if (profile instanceof AdminProfile adminProfile) {
-            return adminProfile;
-        }
-        throw new IllegalStateException("User account is not an admin");
+    public boolean hasRole(UserRole role) {
+        return roles.contains(role);
     }
 }

@@ -13,6 +13,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import com.jayway.jsonpath.JsonPath;
@@ -26,6 +27,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -74,6 +76,9 @@ class HomeIntegrationTest {
 
     @Autowired
     private AccessTokenIssuer accessTokenIssuer;
+
+    @Autowired
+    private JwtDecoder jwtDecoder;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -140,23 +145,22 @@ class HomeIntegrationTest {
     @Test
     void derivesTheStudentOnlyFromTheJwtSubjectAndIgnoresStudentIdentifiers() throws Exception {
         insertOtherStudent();
-        String tokenWithTamperedStudentClaim = accessTokenIssuer.issue(new UserAccount(
-                OTHER_USER_ID,
-                "0987654321",
-                "unused-password-hash",
-                UserRole.STUDENT,
-                true,
-                new StudentProfile(
-                        SEEDED_STUDENT_ID,
-                        "TAMPERED",
-                        "Tampered Profile",
-                        10,
-                        "10A1")))
+        String token = accessTokenIssuer.issue(
+                        new UserAccount(
+                                OTHER_USER_ID,
+                                "0987654321",
+                                "unused-password-hash",
+                                Set.of(UserRole.STUDENT),
+                                true),
+                        UserRole.STUDENT)
                 .value();
+
+        // An access token carries no student identifier at all, so a caller cannot present one.
+        assertThat(jwtDecoder.decode(token).hasClaim("studentId")).isFalse();
 
         mockMvc.perform(get("/api/v1/home")
                         .param("studentId", SEEDED_STUDENT_ID.toString())
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenWithTamperedStudentClaim))
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.student.studentCode").value("SE1913002"))
                 .andExpect(jsonPath("$.student.fullName").value("Lê Gia Huy"))

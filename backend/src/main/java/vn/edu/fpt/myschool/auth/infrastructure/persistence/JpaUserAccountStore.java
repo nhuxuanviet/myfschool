@@ -1,32 +1,29 @@
 package vn.edu.fpt.myschool.auth.infrastructure.persistence;
 
 import java.time.Instant;
+import java.util.EnumSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Repository;
 
 import vn.edu.fpt.myschool.auth.application.port.UserAccountStore;
-import vn.edu.fpt.myschool.auth.domain.AdminProfile;
-import vn.edu.fpt.myschool.auth.domain.StudentProfile;
 import vn.edu.fpt.myschool.auth.domain.UserAccount;
-import vn.edu.fpt.myschool.auth.domain.UserProfile;
 import vn.edu.fpt.myschool.auth.domain.UserRole;
 
 @Repository
 class JpaUserAccountStore implements UserAccountStore {
 
     private final UserJpaRepository userRepository;
-    private final StudentJpaRepository studentRepository;
-    private final AdminProfileJpaRepository adminProfileRepository;
+    private final UserRoleJpaRepository userRoleRepository;
 
     JpaUserAccountStore(
             UserJpaRepository userRepository,
-            StudentJpaRepository studentRepository,
-            AdminProfileJpaRepository adminProfileRepository) {
+            UserRoleJpaRepository userRoleRepository) {
         this.userRepository = userRepository;
-        this.studentRepository = studentRepository;
-        this.adminProfileRepository = adminProfileRepository;
+        this.userRoleRepository = userRoleRepository;
     }
 
     @Override
@@ -57,35 +54,14 @@ class JpaUserAccountStore implements UserAccountStore {
     }
 
     private UserAccount toDomain(UserJpaEntity user) {
-        UserProfile profile = switch (user.getRole()) {
-            case STUDENT -> toStudentProfile(user.getId());
-            case ADMIN -> toAdminProfile(user.getId());
-        };
+        Set<UserRole> roles = userRoleRepository.findByUserId(user.getId()).stream()
+                .map(UserRoleJpaEntity::getRole)
+                .collect(Collectors.toCollection(() -> EnumSet.noneOf(UserRole.class)));
         return new UserAccount(
                 user.getId(),
                 user.getPhoneNumber(),
                 user.getPasswordHash(),
-                user.getRole(),
-                user.isEnabled(),
-                profile);
-    }
-
-    private StudentProfile toStudentProfile(UUID userId) {
-        StudentJpaEntity student = studentRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalStateException(
-                        "Student profile is missing for the user account"));
-        return new StudentProfile(
-                student.getId(),
-                student.getStudentCode(),
-                student.getFullName(),
-                student.getGradeLevel(),
-                student.getClassName());
-    }
-
-    private AdminProfile toAdminProfile(UUID userId) {
-        AdminProfileJpaEntity admin = adminProfileRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalStateException(
-                        "Admin profile is missing for the user account"));
-        return new AdminProfile(admin.getId(), admin.getFullName());
+                roles,
+                user.isEnabled());
     }
 }
