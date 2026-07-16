@@ -2,6 +2,7 @@ package vn.edu.fpt.myschool.auth.infrastructure.persistence;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.boot.ApplicationArguments;
@@ -53,7 +54,11 @@ class AdminDataSeeder implements ApplicationRunner {
         String phoneNumber = VietnamesePhoneNumber.normalize(properties.phoneNumber()).value();
         UserJpaEntity user = userRepository.findByPhoneNumber(phoneNumber)
                 .orElseGet(() -> createUser(phoneNumber));
-        if (user.getRole() != UserRole.ADMIN) {
+        // A user that already exists under this phone but holds other roles belongs to someone
+        // else; granting admin to them would quietly escalate a real account. A newly created
+        // user holds no role yet, which is why an empty set is allowed through.
+        Set<UserRole> existingRoles = userRoleGranter.rolesOf(user.getId());
+        if (!existingRoles.isEmpty() && !existingRoles.contains(UserRole.ADMIN)) {
             throw new IllegalStateException("Admin seed phone belongs to a non-admin user");
         }
         userRoleGranter.grant(user.getId(), UserRole.ADMIN);
@@ -69,7 +74,6 @@ class AdminDataSeeder implements ApplicationRunner {
                 ADMIN_USER_ID,
                 phoneNumber,
                 passwordEncoder.encode(properties.password()),
-                UserRole.ADMIN,
                 true,
                 now));
     }

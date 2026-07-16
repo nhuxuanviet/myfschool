@@ -32,7 +32,8 @@ class JdbcAdminAcademicsStore implements AdminAcademicsStore {
             FROM students student
             INNER JOIN users account ON account.id = student.user_id
             LEFT JOIN school_classes school_class ON school_class.id = student.class_id
-            WHERE account.role = 'STUDENT'
+            WHERE EXISTS (SELECT 1 FROM user_roles ur
+                          WHERE ur.user_id = account.id AND ur.role = 'STUDENT')
               AND (CAST(:query AS VARCHAR) IS NULL OR
                    lower(student.full_name) LIKE lower('%' || CAST(:query AS VARCHAR) || '%') OR
                    lower(student.student_code) LIKE lower('%' || CAST(:query AS VARCHAR) || '%') OR
@@ -178,7 +179,9 @@ class JdbcAdminAcademicsStore implements AdminAcademicsStore {
                 FROM students student
                 INNER JOIN users account ON account.id = student.user_id
                 LEFT JOIN school_classes school_class ON school_class.id = student.class_id
-                WHERE student.id = ? AND account.role = 'STUDENT'
+                WHERE student.id = ?
+                  AND EXISTS (SELECT 1 FROM user_roles ur
+                              WHERE ur.user_id = account.id AND ur.role = 'STUDENT')
                 """,
                 this::mapStudent,
                 studentId);
@@ -381,9 +384,9 @@ class JdbcAdminAcademicsStore implements AdminAcademicsStore {
         jdbcTemplate.update(
                 """
                 INSERT INTO users (
-                    id, phone_number, password_hash, role, enabled,
+                    id, phone_number, password_hash, enabled,
                     credentials_updated_at, created_at, updated_at
-                ) VALUES (?, ?, ?, 'STUDENT', TRUE, ?, ?, ?)
+                ) VALUES (?, ?, ?, TRUE, ?, ?, ?)
                 """,
                 userId, phoneNumber, passwordHash, timestamp, timestamp, timestamp);
         // user_roles is the source of truth for authorisation, so it must be written in the

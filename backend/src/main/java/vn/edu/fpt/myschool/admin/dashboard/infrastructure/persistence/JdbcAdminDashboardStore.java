@@ -22,11 +22,15 @@ class JdbcAdminDashboardStore implements AdminDashboardStore {
                 (SELECT COUNT(*)
                  FROM students s
                  INNER JOIN users u ON u.id = s.user_id
-                 WHERE u.role = 'STUDENT' AND u.enabled = TRUE) AS total_students,
+                 WHERE u.enabled = TRUE
+                   AND EXISTS (SELECT 1 FROM user_roles ur
+                               WHERE ur.user_id = u.id AND ur.role = 'STUDENT')) AS total_students,
                 (SELECT COUNT(DISTINCT s.class_name)
                  FROM students s
                  INNER JOIN users u ON u.id = s.user_id
-                 WHERE u.role = 'STUDENT' AND u.enabled = TRUE) AS active_classes,
+                 WHERE u.enabled = TRUE
+                   AND EXISTS (SELECT 1 FROM user_roles ur
+                               WHERE ur.user_id = u.id AND ur.role = 'STUDENT')) AS active_classes,
                 (SELECT COUNT(*)
                  FROM student_forms
                  WHERE status IN ('SUBMITTED', 'IN_REVIEW')) AS pending_forms,

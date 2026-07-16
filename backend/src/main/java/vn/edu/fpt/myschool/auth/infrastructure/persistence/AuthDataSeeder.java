@@ -76,7 +76,6 @@ class AuthDataSeeder implements ApplicationRunner {
                 SEEDED_USER_ID,
                 phoneNumber,
                 passwordEncoder.encode(properties.password()),
-                UserRole.STUDENT,
                 true,
                 now));
     }
@@ -130,7 +129,6 @@ class AuthDataSeeder implements ApplicationRunner {
                 PEER_USER_ID,
                 PEER_PHONE_NUMBER,
                 passwordEncoder.encode(properties.password()),
-                UserRole.STUDENT,
                 true,
                 now));
     }

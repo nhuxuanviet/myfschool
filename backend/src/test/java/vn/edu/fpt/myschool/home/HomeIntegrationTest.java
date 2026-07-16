@@ -276,17 +276,21 @@ class HomeIntegrationTest {
         String passwordHash = passwordEncoder.encode("OtherStudent@123");
         jdbcTemplate.update("""
                 INSERT INTO users (
-                    id, phone_number, password_hash, role, enabled,
+                    id, phone_number, password_hash, enabled,
                     credentials_updated_at, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
                 """,
                 OTHER_USER_ID,
                 "0987654321",
                 passwordHash,
-                "STUDENT",
                 true,
                 Timestamp.from(now),
                 Timestamp.from(now),
+                Timestamp.from(now));
+        jdbcTemplate.update("""
+                INSERT INTO user_roles (user_id, role, created_at) VALUES (?, 'STUDENT', ?)
+                """,
+                OTHER_USER_ID,
                 Timestamp.from(now));
         jdbcTemplate.update("""
                 INSERT INTO students (

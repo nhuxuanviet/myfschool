@@ -58,15 +58,36 @@ class UserRolesMigrationIntegrationTest {
     }
 
     @Test
-    void agreesWithTheLegacyColumnItReplaces() {
-        Integer mismatches = jdbcTemplate.queryForObject(
+    void leavesNoUserWithoutARole() {
+        // Every path that creates an account must write user_roles in the same transaction.
+        // An account with no role row cannot be loaded at all, so this guards the invariant
+        // that users.role used to enforce with NOT NULL.
+        Integer roleless = jdbcTemplate.queryForObject(
                 """
                 SELECT count(*) FROM users u
-                LEFT JOIN user_roles ur ON ur.user_id = u.id AND ur.role = u.role
-                WHERE ur.user_id IS NULL
+                WHERE NOT EXISTS (SELECT 1 FROM user_roles ur WHERE ur.user_id = u.id)
                 """,
                 Integer.class);
-        assertThat(mismatches).isZero();
+        assertThat(roleless).isZero();
+    }
+
+    @Test
+    void removesTheLegacyColumnAndTheIndexThatDependedOnIt() {
+        Integer legacyColumn = jdbcTemplate.queryForObject(
+                """
+                SELECT count(*) FROM information_schema.columns
+                WHERE table_name = 'users' AND column_name = 'role'
+                """,
+                Integer.class);
+        Integer legacyIndex = jdbcTemplate.queryForObject(
+                """
+                SELECT count(*) FROM pg_indexes
+                WHERE indexname = 'ix_users_student_enabled_phone'
+                """,
+                Integer.class);
+
+        assertThat(legacyColumn).isZero();
+        assertThat(legacyIndex).isZero();
     }
 
     @Test
