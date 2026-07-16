@@ -9,6 +9,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { getAcademicCatalog } from '../api/adminAcademicsApi';
+import { getTeachers } from '../api/adminIdentityApi';
 import {
   createLesson, createTimetableOverride, deleteLesson, deleteTimetableOverride,
   getAdminTimetable,
@@ -19,12 +20,12 @@ import { useAuth } from '../auth/authState';
 const dayNames = ['Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy', 'Chủ nhật'];
 
 const emptyLesson = {
-  dayOfWeek: 1, session: 'MORNING', periodNumber: 1, subjectId: '', teacherName: '', room: '',
+  dayOfWeek: 1, session: 'MORNING', periodNumber: 1, subjectId: '', teacherId: '', room: '',
 };
 
 const emptyOverride = {
   lessonDate: new Date().toISOString().slice(0, 10), session: 'MORNING', periodNumber: 1,
-  overrideType: 'REPLACED', subjectId: '', teacherName: '', room: '', note: '',
+  overrideType: 'REPLACED', subjectId: '', teacherId: '', room: '', note: '',
 };
 
 const overrideTypeLabels: Record<string, string> = {
@@ -52,6 +53,12 @@ export function TimetableAdminPage() {
     queryKey: ['academic-catalog'], queryFn: () => getAcademicCatalog(accessToken!), enabled: Boolean(accessToken),
   });
   const catalog = catalogQuery.data;
+  const teachersQuery = useQuery({
+    queryKey: ['admin', 'teachers', 'for-timetable'],
+    queryFn: () => getTeachers(accessToken!, { page: 0, size: 100, enabled: true, sort: 'fullName,asc' }),
+    enabled: Boolean(accessToken),
+  });
+  const teacherOptions = teachersQuery.data?.items ?? [];
   useEffect(() => {
     if (!catalog) return;
     if (!termId && catalog.terms.length) setTermId(catalog.terms[0].id);
@@ -68,6 +75,9 @@ export function TimetableAdminPage() {
   const lessonMutation = useMutation({
     mutationFn: () => createLesson(accessToken!, {
       academicTermId: termId, schoolClassId: classId, ...lessonForm,
+      // An empty select means "not assigned yet", which the server stores as NULL.
+      // Sending "" would be rejected as a malformed identifier.
+      teacherId: lessonForm.teacherId || null,
       dayOfWeek: Number(lessonForm.dayOfWeek), periodNumber: Number(lessonForm.periodNumber),
     }),
     onSuccess: async () => { await invalidate(); setLessonOpen(false); setLessonForm(emptyLesson); setFeedback('Đã thêm tiết học.'); },
@@ -144,7 +154,7 @@ export function TimetableAdminPage() {
           <TextField select label="Ngày" value={lessonForm.dayOfWeek} onChange={(event) => setLessonForm({ ...lessonForm, dayOfWeek: Number(event.target.value) })}>{dayNames.map((day, index) => <MenuItem key={day} value={index + 1}>{day}</MenuItem>)}</TextField>
           <Stack direction="row" spacing={1.5}><TextField select fullWidth label="Buổi" value={lessonForm.session} onChange={(event) => setLessonForm({ ...lessonForm, session: event.target.value })}><MenuItem value="MORNING">Sáng</MenuItem><MenuItem value="AFTERNOON">Chiều</MenuItem></TextField><TextField select fullWidth label="Tiết" value={lessonForm.periodNumber} onChange={(event) => setLessonForm({ ...lessonForm, periodNumber: Number(event.target.value) })}>{[1,2,3,4,5].map((value) => <MenuItem key={value} value={value}>{value}</MenuItem>)}</TextField></Stack>
           <TextField select label="Môn học" value={lessonForm.subjectId} onChange={(event) => setLessonForm({ ...lessonForm, subjectId: event.target.value })}>{catalog?.subjects.filter((item) => item.enabled).map((item) => <MenuItem key={item.id} value={item.id}>{item.name}</MenuItem>)}</TextField>
-          <TextField label="Giáo viên" value={lessonForm.teacherName} onChange={(event) => setLessonForm({ ...lessonForm, teacherName: event.target.value })} /><TextField label="Phòng học" value={lessonForm.room} onChange={(event) => setLessonForm({ ...lessonForm, room: event.target.value })} />
+          <TextField select label="Giáo viên" value={lessonForm.teacherId} onChange={(event) => setLessonForm({ ...lessonForm, teacherId: event.target.value })}><MenuItem value="">Chưa phân công</MenuItem>{teacherOptions.map((teacher) => <MenuItem key={teacher.id} value={teacher.id}>{teacher.fullName} · {teacher.teacherCode}</MenuItem>)}</TextField><TextField label="Phòng học" value={lessonForm.room} onChange={(event) => setLessonForm({ ...lessonForm, room: event.target.value })} />
         </Stack></DialogContent><DialogActions><Button onClick={() => setLessonOpen(false)}>Hủy</Button><Button variant="contained" disabled={!lessonForm.subjectId || lessonMutation.isPending} onClick={() => lessonMutation.mutate()}>Lưu tiết học</Button></DialogActions>
       </Dialog>
       <Dialog open={overrideOpen} onClose={() => setOverrideOpen(false)} fullWidth maxWidth="sm">

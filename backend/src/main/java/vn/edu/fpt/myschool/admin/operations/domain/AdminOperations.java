@@ -37,6 +37,7 @@ public final class AdminOperations {
             int periodNumber,
             UUID subjectId,
             String subjectName,
+            UUID teacherId,
             String teacherName,
             String room,
             long version) {
@@ -52,6 +53,7 @@ public final class AdminOperations {
             String overrideType,
             UUID subjectId,
             String subjectName,
+            UUID teacherId,
             String teacherName,
             String room,
             String note,

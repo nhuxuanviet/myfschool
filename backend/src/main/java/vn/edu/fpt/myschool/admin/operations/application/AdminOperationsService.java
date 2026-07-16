@@ -65,12 +65,12 @@ public class AdminOperationsService {
             String session,
             int periodNumber,
             UUID subjectId,
-            String teacherName,
+            UUID teacherId,
             String room) {
         validateSlot(dayOfWeek, session, periodNumber);
         return mutate(() -> {
             UUID id = store.createLesson(termId, classId, dayOfWeek, normalize(session),
-                    periodNumber, subjectId, textOrNull(teacherName), textOrNull(room), now());
+                    periodNumber, subjectId, teacherId, textOrNull(room), now());
             audit(actorId, "CREATE", "TIMETABLE_LESSON", id);
             return id;
         });
@@ -81,11 +81,11 @@ public class AdminOperationsService {
             UUID actorId,
             UUID id,
             UUID subjectId,
-            String teacherName,
+            UUID teacherId,
             String room,
             long version) {
         mutate(() -> {
-            requireUpdated(store.updateLesson(id, subjectId, textOrNull(teacherName),
+            requireUpdated(store.updateLesson(id, subjectId, teacherId,
                     textOrNull(room), version, now()), "Lesson");
             audit(actorId, "UPDATE", "TIMETABLE_LESSON", id);
             return id;
@@ -108,7 +108,7 @@ public class AdminOperationsService {
             int periodNumber,
             String overrideType,
             UUID subjectId,
-            String teacherName,
+            UUID teacherId,
             String room,
             String note) {
         validateSlot(lessonDate.getDayOfWeek().getValue(), session, periodNumber);
@@ -119,7 +119,7 @@ public class AdminOperationsService {
         }
         return mutate(() -> {
             UUID id = store.createOverride(termId, classId, lessonDate, normalize(session),
-                    periodNumber, type, subjectId, textOrNull(teacherName), textOrNull(room),
+                    periodNumber, type, subjectId, teacherId, textOrNull(room),
                     textOrNull(note), now());
             audit(actorId, "CREATE", "TIMETABLE_OVERRIDE", id);
             return id;

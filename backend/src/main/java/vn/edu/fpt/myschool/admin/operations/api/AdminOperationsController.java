@@ -61,7 +61,7 @@ public class AdminOperationsController {
             @Valid @RequestBody LessonRequest request) {
         UUID id = service.createLesson(actorId(jwt), request.academicTermId(),
                 request.schoolClassId(), request.dayOfWeek(), request.session(),
-                request.periodNumber(), request.subjectId(), request.teacherName(), request.room());
+                request.periodNumber(), request.subjectId(), request.teacherId(), request.room());
         return created("/api/v1/admin/operations/timetable/lessons/" + id, id);
     }
 
@@ -71,7 +71,7 @@ public class AdminOperationsController {
             @PathVariable UUID lessonId,
             @Valid @RequestBody UpdateLessonRequest request) {
         service.updateLesson(actorId(jwt), lessonId, request.subjectId(),
-                request.teacherName(), request.room(), request.version());
+                request.teacherId(), request.room(), request.version());
         return ResponseEntity.noContent().build();
     }
 
@@ -91,7 +91,7 @@ public class AdminOperationsController {
         UUID id = service.createOverride(actorId(jwt), request.academicTermId(),
                 request.schoolClassId(), request.lessonDate(), request.session(),
                 request.periodNumber(), request.overrideType(), request.subjectId(),
-                request.teacherName(), request.room(), request.note());
+                request.teacherId(), request.room(), request.note());
         return created("/api/v1/admin/operations/timetable/overrides/" + id, id);
     }
 
@@ -302,13 +302,13 @@ public class AdminOperationsController {
             @NotBlank String session,
             @Min(1) @Max(5) int periodNumber,
             @NotNull UUID subjectId,
-            @Size(max = 120) String teacherName,
+            UUID teacherId,
             @Size(max = 32) String room) {
     }
 
     public record UpdateLessonRequest(
             @NotNull UUID subjectId,
-            @Size(max = 120) String teacherName,
+            UUID teacherId,
             @Size(max = 32) String room,
             @Min(0) long version) {
     }
@@ -321,7 +321,7 @@ public class AdminOperationsController {
             @Min(1) @Max(5) int periodNumber,
             @NotBlank String overrideType,
             UUID subjectId,
-            @Size(max = 120) String teacherName,
+            UUID teacherId,
             @Size(max = 32) String room,
             @Size(max = 500) String note) {
     }

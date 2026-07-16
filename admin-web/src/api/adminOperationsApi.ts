@@ -37,6 +37,8 @@ export interface TimetableLesson {
   periodNumber: number;
   subjectId: string;
   subjectName: string;
+  teacherId: string | null;
+  /** Resolved from teacherId for display; the timetable stores the person, not the label. */
   teacherName: string | null;
   room: string | null;
   version: number;
@@ -52,6 +54,7 @@ export interface TimetableOverride {
   overrideType: 'CANCELLED' | 'REPLACED' | 'ADDED';
   subjectId: string | null;
   subjectName: string | null;
+  teacherId: string | null;
   teacherName: string | null;
   room: string | null;
   note: string | null;

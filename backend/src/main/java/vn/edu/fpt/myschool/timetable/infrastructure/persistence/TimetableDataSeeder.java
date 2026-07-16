@@ -215,7 +215,7 @@ class TimetableDataSeeder implements ApplicationRunner {
         jdbcTemplate.update("""
                 INSERT INTO class_timetable_entries (
                     id, academic_term_id, class_name, day_of_week, session, period_number,
-                    subject_id, teacher_name, room, created_at, updated_at
+                    subject_id, teacher_id, room, created_at, updated_at
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT DO NOTHING
                 """,
@@ -226,10 +226,37 @@ class TimetableDataSeeder implements ApplicationRunner {
                 session.name(),
                 periodNumber,
                 subjectId,
-                teacherName,
+                teacherId(teacherName, now),
                 room,
                 Timestamp.from(now),
                 Timestamp.from(now));
+    }
+
+    /**
+     * Resolves a seeded teacher name to a profile, creating one on first sight.
+     *
+     * <p>The id is derived from the name with the same rule V24 uses, so a database migrated
+     * from older data and a freshly seeded one end up pointing at the same profile.
+     */
+    private UUID teacherId(String teacherName, Instant now) {
+        if (teacherName == null || teacherName.isBlank()) {
+            return null;
+        }
+        String fullName = teacherName.strip();
+        UUID id = UUID.nameUUIDFromBytes(
+                ("timetable-teacher:" + fullName).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        jdbcTemplate.update("""
+                INSERT INTO teacher_profiles (
+                    id, user_id, teacher_code, full_name, enabled, version, created_at, updated_at
+                ) VALUES (?, NULL, ?, ?, TRUE, 0, ?, ?)
+                ON CONFLICT (id) DO NOTHING
+                """,
+                id,
+                "TKB" + Integer.toHexString(fullName.hashCode()),
+                fullName,
+                Timestamp.from(now),
+                Timestamp.from(now));
+        return id;
     }
 
     private void upsertOverride(
@@ -246,7 +273,7 @@ class TimetableDataSeeder implements ApplicationRunner {
         jdbcTemplate.update("""
                 INSERT INTO timetable_overrides (
                     id, academic_term_id, class_name, lesson_date, session, period_number,
-                    override_type, subject_id, teacher_name, room, note, created_at, updated_at
+                    override_type, subject_id, teacher_id, room, note, created_at, updated_at
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT (id) DO UPDATE
                 SET lesson_date = EXCLUDED.lesson_date,
@@ -254,7 +281,7 @@ class TimetableDataSeeder implements ApplicationRunner {
                     period_number = EXCLUDED.period_number,
                     override_type = EXCLUDED.override_type,
                     subject_id = EXCLUDED.subject_id,
-                    teacher_name = EXCLUDED.teacher_name,
+                    teacher_id = EXCLUDED.teacher_id,
                     room = EXCLUDED.room,
                     note = EXCLUDED.note,
                     updated_at = EXCLUDED.updated_at
@@ -267,7 +294,7 @@ class TimetableDataSeeder implements ApplicationRunner {
                 periodNumber,
                 overrideType,
                 subjectId,
-                teacherName,
+                teacherId(teacherName, now),
                 room,
                 note,
                 Timestamp.from(now),

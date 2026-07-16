@@ -440,7 +440,7 @@ class TimetableIntegrationTest {
         jdbcTemplate.update("""
                 INSERT INTO class_timetable_entries (
                     id, academic_term_id, class_name, day_of_week, session, period_number,
-                    subject_id, teacher_name, room, created_at, updated_at
+                    subject_id, teacher_id, room, created_at, updated_at
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 UUID.randomUUID(),
@@ -450,10 +450,32 @@ class TimetableIntegrationTest {
                 "MORNING",
                 1,
                 subjectId,
-                teacherName,
+                teacherProfileId(teacherName, now),
                 "P.201",
                 Timestamp.from(now),
                 Timestamp.from(now));
+    }
+
+    /** Resolves a teacher name to a profile the same way V24 and the seeder do. */
+    private UUID teacherProfileId(String teacherName, Instant now) {
+        if (teacherName == null || teacherName.isBlank()) {
+            return null;
+        }
+        String fullName = teacherName.strip();
+        UUID id = UUID.nameUUIDFromBytes(
+                ("timetable-teacher:" + fullName).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        jdbcTemplate.update("""
+                INSERT INTO teacher_profiles (
+                    id, user_id, teacher_code, full_name, enabled, version, created_at, updated_at
+                ) VALUES (?, NULL, ?, ?, TRUE, 0, ?, ?)
+                ON CONFLICT (id) DO NOTHING
+                """,
+                id,
+                "TST" + Integer.toHexString(fullName.hashCode()),
+                fullName,
+                Timestamp.from(now),
+                Timestamp.from(now));
+        return id;
     }
 
     private int insertOverride(
@@ -466,7 +488,7 @@ class TimetableIntegrationTest {
         return jdbcTemplate.update("""
                 INSERT INTO timetable_overrides (
                     id, academic_term_id, class_name, lesson_date, session, period_number,
-                    override_type, subject_id, teacher_name, room, note, created_at, updated_at
+                    override_type, subject_id, teacher_id, room, note, created_at, updated_at
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 UUID.randomUUID(),

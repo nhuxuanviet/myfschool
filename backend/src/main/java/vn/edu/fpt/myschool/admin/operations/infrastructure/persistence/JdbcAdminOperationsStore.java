@@ -48,9 +48,11 @@ class JdbcAdminOperationsStore implements AdminOperationsStore {
                 SELECT entry.id, entry.academic_term_id, entry.school_class_id,
                        entry.day_of_week, entry.session, entry.period_number,
                        entry.subject_id, subject.name AS subject_name,
-                       entry.teacher_name, entry.room, entry.version
+                       entry.teacher_id, teacher.full_name AS teacher_name,
+                       entry.room, entry.version
                 FROM class_timetable_entries entry
                 INNER JOIN subjects subject ON subject.id = entry.subject_id
+                LEFT JOIN teacher_profiles teacher ON teacher.id = entry.teacher_id
                 WHERE entry.academic_term_id = :termId
                   AND entry.school_class_id = :classId
                 ORDER BY entry.day_of_week,
@@ -62,10 +64,12 @@ class JdbcAdminOperationsStore implements AdminOperationsStore {
                        override_entry.school_class_id, override_entry.lesson_date,
                        override_entry.session, override_entry.period_number,
                        override_entry.override_type, override_entry.subject_id,
-                       subject.name AS subject_name, override_entry.teacher_name,
+                       subject.name AS subject_name, override_entry.teacher_id,
+                       teacher.full_name AS teacher_name,
                        override_entry.room, override_entry.note, override_entry.version
                 FROM timetable_overrides override_entry
                 LEFT JOIN subjects subject ON subject.id = override_entry.subject_id
+                LEFT JOIN teacher_profiles teacher ON teacher.id = override_entry.teacher_id
                 WHERE override_entry.academic_term_id = :termId
                   AND override_entry.school_class_id = :classId
                 ORDER BY override_entry.lesson_date DESC,
@@ -83,20 +87,20 @@ class JdbcAdminOperationsStore implements AdminOperationsStore {
             String session,
             int periodNumber,
             UUID subjectId,
-            String teacherName,
+            UUID teacherId,
             String room,
             Instant now) {
         UUID id = UUID.randomUUID();
         namedJdbcTemplate.update("""
                 INSERT INTO class_timetable_entries (
                     id, academic_term_id, class_name, school_class_id, day_of_week,
-                    session, period_number, subject_id, teacher_name, room,
+                    session, period_number, subject_id, teacher_id, room,
                     created_at, updated_at, version
                 ) VALUES (
                     :id, :termId,
                     (SELECT code FROM school_classes WHERE id = :classId),
                     :classId, :dayOfWeek, :session, :periodNumber, :subjectId,
-                    :teacherName, :room, :now, :now, 0
+                    :teacherId, :room, :now, :now, 0
                 )
                 """, new MapSqlParameterSource()
                 .addValue("id", id)
@@ -106,7 +110,7 @@ class JdbcAdminOperationsStore implements AdminOperationsStore {
                 .addValue("session", session)
                 .addValue("periodNumber", periodNumber)
                 .addValue("subjectId", subjectId)
-                .addValue("teacherName", teacherName)
+                .addValue("teacherId", teacherId)
                 .addValue("room", room)
                 .addValue("now", Timestamp.from(now)));
         return id;
@@ -116,14 +120,14 @@ class JdbcAdminOperationsStore implements AdminOperationsStore {
     public boolean updateLesson(
             UUID id,
             UUID subjectId,
-            String teacherName,
+            UUID teacherId,
             String room,
             long version,
             Instant now) {
         return namedJdbcTemplate.update("""
                 UPDATE class_timetable_entries
                 SET subject_id = :subjectId,
-                    teacher_name = :teacherName,
+                    teacher_id = :teacherId,
                     room = :room,
                     version = version + 1,
                     updated_at = :now
@@ -131,7 +135,7 @@ class JdbcAdminOperationsStore implements AdminOperationsStore {
                 """, new MapSqlParameterSource()
                 .addValue("id", id)
                 .addValue("subjectId", subjectId)
-                .addValue("teacherName", teacherName)
+                .addValue("teacherId", teacherId)
                 .addValue("room", room)
                 .addValue("version", version)
                 .addValue("now", Timestamp.from(now))) == 1;
@@ -153,7 +157,7 @@ class JdbcAdminOperationsStore implements AdminOperationsStore {
             int periodNumber,
             String overrideType,
             UUID subjectId,
-            String teacherName,
+            UUID teacherId,
             String room,
             String note,
             Instant now) {
@@ -161,13 +165,13 @@ class JdbcAdminOperationsStore implements AdminOperationsStore {
         namedJdbcTemplate.update("""
                 INSERT INTO timetable_overrides (
                     id, academic_term_id, class_name, school_class_id, lesson_date,
-                    session, period_number, override_type, subject_id, teacher_name,
+                    session, period_number, override_type, subject_id, teacher_id,
                     room, note, created_at, updated_at, version
                 ) VALUES (
                     :id, :termId,
                     (SELECT code FROM school_classes WHERE id = :classId),
                     :classId, :lessonDate, :session, :periodNumber, :overrideType,
-                    :subjectId, :teacherName, :room, :note, :now, :now, 0
+                    :subjectId, :teacherId, :room, :note, :now, :now, 0
                 )
                 """, new MapSqlParameterSource()
                 .addValue("id", id)
@@ -178,7 +182,7 @@ class JdbcAdminOperationsStore implements AdminOperationsStore {
                 .addValue("periodNumber", periodNumber)
                 .addValue("overrideType", overrideType)
                 .addValue("subjectId", subjectId)
-                .addValue("teacherName", teacherName)
+                .addValue("teacherId", teacherId)
                 .addValue("room", room)
                 .addValue("note", note)
                 .addValue("now", Timestamp.from(now)));
@@ -878,6 +882,7 @@ class JdbcAdminOperationsStore implements AdminOperationsStore {
                 row.getInt("period_number"),
                 row.getObject("subject_id", UUID.class),
                 row.getString("subject_name"),
+                row.getObject("teacher_id", UUID.class),
                 row.getString("teacher_name"),
                 row.getString("room"),
                 row.getLong("version"));
@@ -894,6 +899,7 @@ class JdbcAdminOperationsStore implements AdminOperationsStore {
                 row.getString("override_type"),
                 row.getObject("subject_id", UUID.class),
                 row.getString("subject_name"),
+                row.getObject("teacher_id", UUID.class),
                 row.getString("teacher_name"),
                 row.getString("room"),
                 row.getString("note"),

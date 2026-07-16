@@ -156,13 +156,17 @@ class AdminTeachersIntegrationTest {
     void filtersTeachersByWhetherTheyCanSignIn() throws Exception {
         createTeacher("GV400", "Chưa có tài khoản");
 
+        // Scoped by query: V24 derives profiles from the seeded timetable, so an unscoped
+        // count would measure the seed rather than this test.
         mockMvc.perform(get("/api/v1/admin/teachers")
+                        .param("query", "GV400")
                         .param("hasAccount", "false")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalElements").value(1));
 
         mockMvc.perform(get("/api/v1/admin/teachers")
+                        .param("query", "GV400")
                         .param("hasAccount", "true")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
                 .andExpect(status().isOk())

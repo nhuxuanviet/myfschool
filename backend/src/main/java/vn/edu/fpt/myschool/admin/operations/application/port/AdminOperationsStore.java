@@ -13,16 +13,16 @@ public interface AdminOperationsStore {
     AdminOperations.Timetable loadTimetable(UUID academicTermId, UUID schoolClassId);
 
     UUID createLesson(UUID academicTermId, UUID schoolClassId, int dayOfWeek, String session,
-            int periodNumber, UUID subjectId, String teacherName, String room, Instant now);
+            int periodNumber, UUID subjectId, UUID teacherId, String room, Instant now);
 
-    boolean updateLesson(UUID id, UUID subjectId, String teacherName, String room,
+    boolean updateLesson(UUID id, UUID subjectId, UUID teacherId, String room,
             long version, Instant now);
 
     boolean deleteLesson(UUID id, long version);
 
     UUID createOverride(UUID academicTermId, UUID schoolClassId, LocalDate lessonDate,
             String session, int periodNumber, String overrideType, UUID subjectId,
-            String teacherName, String room, String note, Instant now);
+            UUID teacherId, String room, String note, Instant now);
 
     boolean deleteOverride(UUID id, long version);
 

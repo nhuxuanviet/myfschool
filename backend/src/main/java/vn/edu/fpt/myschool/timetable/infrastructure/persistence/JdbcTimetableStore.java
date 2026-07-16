@@ -52,7 +52,7 @@ class JdbcTimetableStore implements TimetableStore {
                     period_definition.end_time,
                     subject.code AS regular_subject_code,
                     subject.name AS regular_subject_name,
-                    entry.teacher_name AS regular_teacher_name,
+                    regular_teacher.full_name AS regular_teacher_name,
                     entry.room AS regular_room
                 FROM class_timetable_entries entry
                 INNER JOIN academic_terms academic_term ON academic_term.id = entry.academic_term_id
@@ -61,6 +61,9 @@ class JdbcTimetableStore implements TimetableStore {
                     AND period_definition.session = entry.session
                     AND period_definition.period_number = entry.period_number
                 INNER JOIN subjects subject ON subject.id = entry.subject_id
+                -- LEFT JOIN: a slot may have no teacher named yet, and that must not
+                -- make the lesson itself disappear from the student's timetable.
+                LEFT JOIN teacher_profiles regular_teacher ON regular_teacher.id = entry.teacher_id
                 WHERE entry.academic_term_id = :academicTermId
                   AND entry.class_name = :className
                   AND CAST(:weekStart AS date) + (entry.day_of_week - 1)
@@ -82,7 +85,7 @@ class JdbcTimetableStore implements TimetableStore {
                         ELSE regular.regular_subject_name
                     END AS subject_name,
                     CASE WHEN override.override_type = 'REPLACED'
-                        THEN override.teacher_name
+                        THEN override_teacher.full_name
                         ELSE regular.regular_teacher_name
                     END AS teacher_name,
                     CASE WHEN override.override_type = 'REPLACED'
@@ -100,6 +103,7 @@ class JdbcTimetableStore implements TimetableStore {
                     AND override.period_number = regular.period_number
                     AND override.override_type IN ('CANCELLED', 'REPLACED')
                 LEFT JOIN subjects override_subject ON override_subject.id = override.subject_id
+                LEFT JOIN teacher_profiles override_teacher ON override_teacher.id = override.teacher_id
             ),
             added_without_regular_slot AS (
                 SELECT
@@ -110,7 +114,7 @@ class JdbcTimetableStore implements TimetableStore {
                     period_definition.end_time,
                     subject.code AS subject_code,
                     subject.name AS subject_name,
-                    override.teacher_name,
+                    added_teacher.full_name AS teacher_name,
                     override.room,
                     override.override_type AS lesson_status,
                     override.note
@@ -121,6 +125,7 @@ class JdbcTimetableStore implements TimetableStore {
                     AND period_definition.session = override.session
                     AND period_definition.period_number = override.period_number
                 INNER JOIN subjects subject ON subject.id = override.subject_id
+                LEFT JOIN teacher_profiles added_teacher ON added_teacher.id = override.teacher_id
                 WHERE override.academic_term_id = :academicTermId
                   AND override.class_name = :className
                   AND override.lesson_date BETWEEN :weekStart AND :weekEnd

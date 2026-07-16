@@ -76,8 +76,14 @@ class GuardianLinkMigrationIntegrationTest {
         insertTeacher("GV001", "Nguyễn Thị Lan");
         insertTeacher("GV002", "Phạm Văn Hùng");
 
+        // V24 derives profiles from the seeded timetable, so the table is never empty here.
+        // Count only the two this test inserted.
         Integer unaccounted = jdbcTemplate.queryForObject(
-                "SELECT count(*) FROM teacher_profiles WHERE user_id IS NULL", Integer.class);
+                """
+                SELECT count(*) FROM teacher_profiles
+                WHERE user_id IS NULL AND teacher_code IN ('GV001', 'GV002')
+                """,
+                Integer.class);
         assertThat(unaccounted).isEqualTo(2);
     }
 
