@@ -443,9 +443,15 @@ refresh token gắn với vai đang hoạt động. Đổi vai tạo phiên mớ
 
 ## 9. Admin Web
 
-Bổ sung bảy trang: Giáo viên, Phân công giảng dạy, Phân công chủ nhiệm, Phụ
-huynh, Liên kết phụ huynh - học sinh, Khoá/mở sổ điểm, Duyệt yêu cầu sửa điểm.
-Trang Lịch học sửa để gắn giáo viên thật thay cho tên tự do.
+Bổ sung sáu trang: Giáo viên, Phân công giảng dạy, Phân công chủ nhiệm, Phụ
+huynh, Khoá/mở sổ điểm, Duyệt yêu cầu sửa điểm. Trang Lịch học sửa để gắn giáo
+viên thật thay cho tên tự do.
+
+**Quyết định ngày 2026-07-17 (thay thế phương án bảy trang trước đó):** liên kết
+phụ huynh - học sinh **không tách thành trang riêng** mà nằm trong trang Phụ
+huynh. Một liên kết luôn thuộc về một phụ huynh cụ thể, nên thao tác tự nhiên là
+mở phụ huynh đó ra rồi thêm hoặc gỡ con. Trang riêng buộc người dùng nhớ tên cả
+hai phía rồi ghép lại, và tạo thêm một chỗ nữa để đọc cùng một dữ liệu.
 
 Admin không có ứng dụng di động. Phiên Admin giữ nguyên cơ chế cookie httpOnly
 kèm CSRF, tách biệt khỏi luồng JWT của di động.

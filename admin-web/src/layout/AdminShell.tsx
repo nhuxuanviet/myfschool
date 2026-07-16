@@ -8,6 +8,7 @@ import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import EventOutlinedIcon from '@mui/icons-material/EventOutlined';
 import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
+import FamilyRestroomOutlinedIcon from '@mui/icons-material/FamilyRestroomOutlined';
 import HistoryRoundedIcon from '@mui/icons-material/HistoryRounded';
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import MenuRoundedIcon from '@mui/icons-material/MenuRounded';
@@ -53,6 +54,7 @@ const navigation = [
   { section: 'QUẢN LÝ', items: [
     { label: 'Học sinh', path: '/students', icon: <PeopleAltOutlinedIcon /> },
     { label: 'Giáo viên', path: '/teachers', icon: <SchoolOutlinedIcon /> },
+    { label: 'Phụ huynh', path: '/parents', icon: <FamilyRestroomOutlinedIcon /> },
     { label: 'Học vụ', path: '/academics', icon: <SchoolOutlinedIcon /> },
     { label: 'Lịch học', path: '/timetable', icon: <CalendarMonthOutlinedIcon /> },
     { label: 'Điểm số', path: '/grades', icon: <AssessmentOutlinedIcon /> },
