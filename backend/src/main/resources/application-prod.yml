@@ -1,0 +1,55 @@
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  ai:
+    model:
+      chat: ${AI_CHAT_MODEL:openai}
+  lifecycle:
+    timeout-per-shutdown-phase: ${SHUTDOWN_TIMEOUT:30s}
+
+server:
+  address: ${SERVER_ADDRESS:0.0.0.0}
+  max-http-request-header-size: ${MAX_HTTP_REQUEST_HEADER_SIZE:16KB}
+  tomcat:
+    max-swallow-size: ${MAX_REQUEST_SIZE:2MB}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+      cors:
+        allowed-origins: ${CORS_ALLOWED_ORIGINS}
+
+app:
+  assistant:
+    provider: ${ASSISTANT_PROVIDER:openai}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS}
+  security:
+    admin-session:
+      secure-cookies: true
+    auth:
+      password-strength: ${PASSWORD_HASH_STRENGTH:12}
+    sms:
+      endpoint: ${SMS_GATEWAY_URL}
+      api-key: ${SMS_GATEWAY_API_KEY}
+      sender-id: ${SMS_SENDER_ID:MySchool}
+      connect-timeout: ${SMS_CONNECT_TIMEOUT:3s}
+      read-timeout: ${SMS_READ_TIMEOUT:5s}
+
+springdoc:
+  api-docs:
+    enabled: ${OPENAPI_ENABLED:false}
+  swagger-ui:
+    enabled: ${OPENAPI_ENABLED:false}
+
+logging:
+  level:
+    root: INFO
+    vn.edu.fpt.myschool: INFO

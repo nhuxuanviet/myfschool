@@ -1,0 +1,34 @@
+{
+  "name": "myfschool-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Playwright end-to-end tests for the My FSchool backend and Flutter web app.",
+  "scripts": {
+    "db:up": "node ./scripts/prepare-postgres.mjs",
+    "test": "node ./scripts/run-playwright.mjs",
+    "test:phase-01": "node ./scripts/run-playwright.mjs ./tests/phase-01-foundation.spec.ts",
+    "test:phase-02": "node ./scripts/run-playwright.mjs ./tests/phase-02-auth.spec.ts",
+    "test:phase-03": "node ./scripts/run-playwright.mjs ./tests/phase-03-home.spec.ts",
+    "test:phase-04": "node ./scripts/run-playwright.mjs ./tests/phase-04-timetable.spec.ts",
+    "test:phase-05": "node ./scripts/run-playwright.mjs ./tests/phase-05-grades.spec.ts",
+    "test:phase-06": "node ./scripts/run-playwright.mjs ./tests/phase-06-events.spec.ts",
+    "test:phase-07": "node ./scripts/run-playwright.mjs ./tests/phase-07-forms.spec.ts",
+    "test:phase-08": "node ./scripts/run-playwright.mjs ./tests/phase-08-clubs.spec.ts",
+    "test:phase-09": "node ./scripts/run-playwright.mjs ./tests/phase-09-assistant.spec.ts",
+    "test:headed": "node ./scripts/run-playwright.mjs --headed",
+    "test:ui": "node ./scripts/run-playwright.mjs --ui",
+    "typecheck": "tsc --noEmit",
+    "verify:backend-environment": "node ./scripts/verify-backend-environment.mjs",
+    "install:browsers": "playwright install chromium"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.61.1",
+    "@types/node": "24.13.3",
+    "cross-spawn": "7.0.6",
+    "typescript": "6.0.3"
+  }
+}

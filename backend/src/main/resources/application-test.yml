@@ -1,0 +1,22 @@
+spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 4
+      minimum-idle: 1
+
+springdoc:
+  api-docs:
+    enabled: false
+
+app:
+  security:
+    auth:
+      jwt-secret: test-only-jwt-signing-secret-not-for-production
+      otp-pepper: test-only-otp-hashing-pepper-not-for-production
+      password-strength: 4
+  swagger-ui:
+    enabled: false
+
+logging:
+  level:
+    org.testcontainers: INFO

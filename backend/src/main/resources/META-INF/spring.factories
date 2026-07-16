@@ -1,0 +1,2 @@
+org.springframework.boot.EnvironmentPostProcessor=\
+vn.edu.fpt.myschool.shared.config.ProductionProfileEnvironmentPostProcessor

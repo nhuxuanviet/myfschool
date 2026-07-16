@@ -1,0 +1,34 @@
+management:
+  endpoint:
+    health:
+      show-details: always
+
+spring:
+  ai:
+    model:
+      chat: ${AI_CHAT_MODEL:openai}
+
+app:
+  assistant:
+    provider: ${ASSISTANT_PROVIDER:openai}
+
+  security:
+    auth:
+      jwt-secret: dev-only-jwt-signing-secret-change-me-2026
+      otp-pepper: dev-only-otp-hashing-pepper-change-me-2026
+      password-strength: 10
+    seed:
+      phone-number: "0912345678"
+      password: "123"
+      student-code: SE1913001
+      full-name: Nhữ Xuân Việt
+      grade-level: 10
+      class-name: 10A1
+    admin-seed:
+      phone-number: "0900000000"
+      password: Admin@123
+      full-name: Quản trị FSchool
+
+logging:
+  level:
+    vn.edu.fpt.myschool: DEBUG

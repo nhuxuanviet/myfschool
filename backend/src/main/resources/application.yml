@@ -1,0 +1,121 @@
+spring:
+  application:
+    name: myschool-backend
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://127.0.0.1:5433/myschool}
+    username: ${DB_USERNAME:myschool}
+    password: ${DB_PASSWORD:myschool}
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:10}
+      minimum-idle: ${DB_POOL_MIN_IDLE:2}
+      connection-timeout: 30000
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    validate-migration-naming: true
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  mvc:
+    problemdetails:
+      enabled: true
+  jackson:
+    time-zone: UTC
+  ai:
+    model:
+      chat: ${AI_CHAT_MODEL:none}
+    openai:
+      api-key: ${OPENAI_API_KEY:}
+      chat:
+        model: ${OPENAI_MODEL:gpt-5.6-luna}
+        store: false
+        parallel-tool-calls: false
+        temperature: ${OPENAI_TEMPERATURE:0.6}
+        verbosity: medium
+        reasoning-effort: none
+        max-completion-tokens: 800
+
+server:
+  address: ${SERVER_ADDRESS:0.0.0.0}
+  port: ${SERVER_PORT:8080}
+  shutdown: graceful
+  forward-headers-strategy: framework
+  error:
+    include-message: never
+    include-stacktrace: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+      cors:
+        allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4173,http://127.0.0.1:4173}
+        allowed-methods: GET,OPTIONS
+        allowed-headers: Authorization,Content-Type,Accept,X-Requested-With
+        exposed-headers: Location
+        allow-credentials: false
+        max-age: 1h
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: ${spring.application.name}
+    version: 0.1.0-SNAPSHOT
+
+app:
+  assistant:
+    provider: ${ASSISTANT_PROVIDER:local}
+    usage:
+      window: ${ASSISTANT_RATE_LIMIT_WINDOW:1m}
+      max-requests: ${ASSISTANT_MAX_REQUESTS_PER_WINDOW:20}
+  cors:
+    path-patterns: /api/**
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4173,http://127.0.0.1:4173,http://localhost:4174,http://127.0.0.1:4174}
+    allowed-methods: GET,POST,PUT,PATCH,DELETE,OPTIONS
+    allowed-headers: Authorization,Content-Type,Accept,X-Requested-With,X-CSRF-Token
+    exposed-headers: Location
+    allow-credentials: true
+    max-age: 1h
+  security:
+    admin-session:
+      refresh-cookie-name: MYSCHOOL_ADMIN_REFRESH
+      csrf-cookie-name: MYSCHOOL_ADMIN_CSRF
+      csrf-header-name: X-CSRF-Token
+      secure-cookies: ${ADMIN_SECURE_COOKIES:false}
+      login-attempt-window: ${ADMIN_LOGIN_ATTEMPT_WINDOW:15m}
+      max-login-attempts: ${ADMIN_MAX_LOGIN_ATTEMPTS:5}
+      login-block-duration: ${ADMIN_LOGIN_BLOCK_DURATION:15m}
+    auth:
+      issuer: myschool-backend
+      jwt-secret: ${JWT_SECRET}
+      access-token-ttl: 10m
+      refresh-token-ttl: 30d
+      reset-challenge-ttl: 10m
+      reset-token-ttl: 10m
+      max-otp-attempts: 5
+      reset-request-rate-limit-window: ${PASSWORD_RESET_RATE_LIMIT_WINDOW:15m}
+      max-reset-requests-per-window: ${PASSWORD_RESET_MAX_REQUESTS:3}
+      otp-pepper: ${OTP_PEPPER}
+      password-strength: 12
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    operations-sorter: method
+    tags-sorter: alpha
+    display-request-duration: true
