@@ -5,8 +5,12 @@ import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+
+import vn.edu.fpt.myschool.auth.domain.UserRole;
 
 @Entity
 @Table(name = "refresh_sessions")
@@ -23,6 +27,10 @@ class RefreshSessionJpaEntity {
 
     @Column(name = "parent_session_id")
     private UUID parentSessionId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "active_role", nullable = false, length = 32)
+    private UserRole activeRole;
 
     @Column(name = "token_hash", nullable = false, length = 64, unique = true)
     private String tokenHash;
@@ -50,6 +58,7 @@ class RefreshSessionJpaEntity {
             UUID userId,
             UUID familyId,
             UUID parentSessionId,
+            UserRole activeRole,
             String tokenHash,
             Instant expiresAt,
             Instant usedAt,
@@ -59,6 +68,7 @@ class RefreshSessionJpaEntity {
         this.userId = userId;
         this.familyId = familyId;
         this.parentSessionId = parentSessionId;
+        this.activeRole = activeRole;
         this.tokenHash = tokenHash;
         this.expiresAt = expiresAt;
         this.usedAt = usedAt;
@@ -80,6 +90,10 @@ class RefreshSessionJpaEntity {
 
     UUID getParentSessionId() {
         return parentSessionId;
+    }
+
+    UserRole getActiveRole() {
+        return activeRole;
     }
 
     String getTokenHash() {

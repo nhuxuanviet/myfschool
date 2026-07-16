@@ -44,6 +44,9 @@ public class AuthSecurityConfiguration {
     private static final String[] PUBLIC_AUTH_ENDPOINTS = {
         "/api/v1/auth/login",
         "/api/v1/auth/refresh",
+        // Authenticated by the refresh token in the body, like /refresh, so it cannot sit
+        // behind the access-token filter: the caller is asking for a token it does not have yet.
+        "/api/v1/auth/switch-role",
         "/api/v1/auth/logout",
         "/api/v1/auth/password-reset/request",
         "/api/v1/auth/password-reset/verify",

@@ -134,7 +134,7 @@ class AuthConcurrencyIntegrationTest {
         signalUserLockAttempt(RESET_THREAD, resetAttemptedUserLock);
 
         CompletableFuture<AuthenticationResult> loginFuture =
-                runAsync(LOGIN_THREAD, () -> authService.login(PHONE_NUMBER, ORIGINAL_PASSWORD));
+                runAsync(LOGIN_THREAD, () -> authService.login(PHONE_NUMBER, ORIGINAL_PASSWORD, null));
         CompletableFuture<Void> resetFuture = null;
         try {
             await(loginReachedSessionCreation);
@@ -154,7 +154,7 @@ class AuthConcurrencyIntegrationTest {
 
         assertThat(activeRefreshSessionCount()).isZero();
         assertInvalidRefreshToken(loginResult.refreshToken());
-        assertThatThrownBy(() -> authService.login(PHONE_NUMBER, ORIGINAL_PASSWORD))
+        assertThatThrownBy(() -> authService.login(PHONE_NUMBER, ORIGINAL_PASSWORD, null))
                 .isInstanceOf(AuthException.class)
                 .extracting("code")
                 .isEqualTo("INVALID_CREDENTIALS");
@@ -163,7 +163,7 @@ class AuthConcurrencyIntegrationTest {
     @Test
     void resetSerializesWithRefreshAndRevokesTheRotatedFamily() throws Exception {
         AuthenticationResult initialLogin =
-                authService.login(PHONE_NUMBER, ORIGINAL_PASSWORD);
+                authService.login(PHONE_NUMBER, ORIGINAL_PASSWORD, null);
         String resetToken = createVerifiedResetToken();
         CountDownLatch refreshReachedConsumption = new CountDownLatch(1);
         CountDownLatch allowRefreshToFinish = new CountDownLatch(1);

@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import vn.edu.fpt.myschool.auth.application.AuthenticationResult;
 import vn.edu.fpt.myschool.auth.application.AuthService;
 import vn.edu.fpt.myschool.auth.application.PasswordResetDeliveryUnavailableException;
 import vn.edu.fpt.myschool.auth.application.PasswordResetService;
@@ -32,16 +33,26 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    @Operation(summary = "Authenticate a student")
+    @Operation(summary = "Authenticate a student, teacher or parent")
     public AuthTokenResponse login(@Valid @RequestBody LoginRequest request) {
-        return AuthTokenResponse.from(
-                authService.login(request.phoneNumber(), request.password()));
+        AuthenticationResult result =
+                authService.login(request.phoneNumber(), request.password(), request.role());
+        return AuthTokenResponse.from(result, authService.mobileRolesOf(result.account()));
+    }
+
+    @PostMapping("/switch-role")
+    @Operation(summary = "Open a session for another role the account already holds")
+    public AuthTokenResponse switchRole(@Valid @RequestBody SwitchRoleRequest request) {
+        AuthenticationResult result =
+                authService.switchRole(request.refreshToken(), request.role());
+        return AuthTokenResponse.from(result, authService.mobileRolesOf(result.account()));
     }
 
     @PostMapping("/refresh")
     @Operation(summary = "Rotate a refresh token and issue a new token pair")
     public AuthTokenResponse refresh(@Valid @RequestBody RefreshTokenRequest request) {
-        return AuthTokenResponse.from(authService.refresh(request.refreshToken()));
+        AuthenticationResult result = authService.refresh(request.refreshToken());
+        return AuthTokenResponse.from(result, authService.mobileRolesOf(result.account()));
     }
 
     @PostMapping("/logout")

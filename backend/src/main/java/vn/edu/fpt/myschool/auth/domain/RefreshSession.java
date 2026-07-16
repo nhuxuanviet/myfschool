@@ -8,6 +8,7 @@ public record RefreshSession(
         UUID userId,
         UUID familyId,
         UUID parentSessionId,
+        UserRole activeRole,
         String tokenHash,
         Instant expiresAt,
         Instant usedAt,

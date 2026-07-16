@@ -17,6 +17,19 @@ public final class AuthException extends ApiException {
                 "Phone number or password is incorrect");
     }
 
+    /**
+     * The account holds several mobile roles and the caller did not say which one to open.
+     *
+     * <p>Deliberately not an authentication failure: the credentials were correct. The client
+     * shows a role chooser and repeats the request with a role.
+     */
+    static AuthException roleSelectionRequired() {
+        return new AuthException(
+                HttpStatus.CONFLICT,
+                "ROLE_SELECTION_REQUIRED",
+                "Account holds several roles. Repeat the request with the role to open");
+    }
+
     static AuthException invalidRefreshToken() {
         return new AuthException(
                 HttpStatus.UNAUTHORIZED,
