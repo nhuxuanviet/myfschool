@@ -292,9 +292,23 @@ class HomeIntegrationTest {
                 """,
                 OTHER_USER_ID,
                 Timestamp.from(now));
+        // A class is a foreign key since V25, so the class this student belongs to has to
+        // exist before the student can point at it.
+        UUID academicYearId = jdbcTemplate.queryForObject(
+                "SELECT id FROM academic_years ORDER BY ends_on DESC, id LIMIT 1", UUID.class);
+        UUID otherClassId = jdbcTemplate.queryForObject(
+                "SELECT md5(?::text || ':' || ?)::uuid", UUID.class, academicYearId, "11A2");
+        jdbcTemplate.update("""
+                INSERT INTO school_classes (
+                    id, academic_year_id, code, name, grade_level, enabled, version,
+                    created_at, updated_at
+                ) VALUES (?, ?, '11A2', '11A2', 11, TRUE, 0, ?, ?)
+                ON CONFLICT (academic_year_id, code) DO NOTHING
+                """,
+                otherClassId, academicYearId, Timestamp.from(now), Timestamp.from(now));
         jdbcTemplate.update("""
                 INSERT INTO students (
-                    id, user_id, student_code, full_name, grade_level, class_name,
+                    id, user_id, student_code, full_name, grade_level, class_id,
                     created_at, updated_at
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
@@ -303,7 +317,7 @@ class HomeIntegrationTest {
                 "SE1913002",
                 "Lê Gia Huy",
                 11,
-                "11A2",
+                otherClassId,
                 Timestamp.from(now),
                 Timestamp.from(now));
     }

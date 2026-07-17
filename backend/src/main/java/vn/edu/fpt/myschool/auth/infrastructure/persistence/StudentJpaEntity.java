@@ -27,7 +27,17 @@ class StudentJpaEntity {
     @Column(name = "grade_level", nullable = false)
     private short gradeLevel;
 
-    @Column(name = "class_name", nullable = false, length = 32)
+    @Column(name = "class_id")
+    private UUID classId;
+
+    /**
+     * The class code, read through the class relationship.
+     *
+     * <p>Derived rather than stored: students.class_name was dropped in V25 because a class had
+     * two representations that could disagree. This keeps the existing read contract intact while
+     * class_id remains the only thing written.
+     */
+    @org.hibernate.annotations.Formula("(SELECT school_class.code FROM school_classes school_class WHERE school_class.id = class_id)")
     private String className;
 
     @Column(name = "created_at", nullable = false)
@@ -45,14 +55,14 @@ class StudentJpaEntity {
             String studentCode,
             String fullName,
             int gradeLevel,
-            String className,
+            UUID classId,
             Instant now) {
         this.id = id;
         this.userId = userId;
         this.studentCode = studentCode;
         this.fullName = fullName;
         this.gradeLevel = (short) gradeLevel;
-        this.className = className;
+        this.classId = classId;
         this.createdAt = now;
         this.updatedAt = now;
     }
@@ -81,12 +91,12 @@ class StudentJpaEntity {
             String studentCode,
             String fullName,
             int gradeLevel,
-            String className,
+            UUID classId,
             Instant now) {
         this.studentCode = studentCode;
         this.fullName = fullName;
         this.gradeLevel = (short) gradeLevel;
-        this.className = className;
+        this.classId = classId;
         this.updatedAt = now;
     }
 }

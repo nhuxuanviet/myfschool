@@ -125,7 +125,7 @@ class JdbcAdminAcademicsStore implements AdminAcademicsStore {
                        account.phone_number,
                        student.grade_level,
                        student.class_id,
-                       COALESCE(school_class.code, student.class_name) AS class_code,
+                       school_class.code AS class_code,
                        account.enabled,
                        student.version,
                        student.updated_at
@@ -172,7 +172,7 @@ class JdbcAdminAcademicsStore implements AdminAcademicsStore {
                        account.phone_number,
                        student.grade_level,
                        student.class_id,
-                       COALESCE(school_class.code, student.class_name) AS class_code,
+                       school_class.code AS class_code,
                        account.enabled,
                        student.version,
                        student.updated_at
@@ -338,10 +338,10 @@ class JdbcAdminAcademicsStore implements AdminAcademicsStore {
             jdbcTemplate.update(
                     """
                     UPDATE students
-                    SET class_name = ?, grade_level = ?, updated_at = ?
+                    SET grade_level = ?, updated_at = ?
                     WHERE class_id = ?
                     """,
-                    code, gradeLevel, Timestamp.from(now), id);
+                    gradeLevel, Timestamp.from(now), id);
         }
         return updated == 1;
     }
@@ -402,11 +402,11 @@ class JdbcAdminAcademicsStore implements AdminAcademicsStore {
                 """
                 INSERT INTO students (
                     id, user_id, student_code, full_name, grade_level,
-                    class_name, class_id, version, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
+                    class_id, version, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)
                 """,
                 studentId, userId, studentCode, fullName, schoolClass.gradeLevel(),
-                schoolClass.code(), schoolClass.id(), timestamp, timestamp);
+                schoolClass.id(), timestamp, timestamp);
         return studentId;
     }
 
@@ -425,10 +425,10 @@ class JdbcAdminAcademicsStore implements AdminAcademicsStore {
                 """
                 UPDATE students
                 SET student_code = ?, full_name = ?, grade_level = ?,
-                    class_name = ?, class_id = ?, version = version + 1, updated_at = ?
+                    class_id = ?, version = version + 1, updated_at = ?
                 WHERE id = ? AND version = ?
                 """,
-                studentCode, fullName, schoolClass.gradeLevel(), schoolClass.code(),
+                studentCode, fullName, schoolClass.gradeLevel(),
                 schoolClass.id(), timestamp, studentId, version);
         if (updated == 0) {
             return false;

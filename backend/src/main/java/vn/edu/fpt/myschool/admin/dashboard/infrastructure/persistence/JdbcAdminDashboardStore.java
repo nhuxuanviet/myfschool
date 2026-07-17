@@ -25,7 +25,7 @@ class JdbcAdminDashboardStore implements AdminDashboardStore {
                  WHERE u.enabled = TRUE
                    AND EXISTS (SELECT 1 FROM user_roles ur
                                WHERE ur.user_id = u.id AND ur.role = 'STUDENT')) AS total_students,
-                (SELECT COUNT(DISTINCT s.class_name)
+                (SELECT COUNT(DISTINCT s.class_id)
                  FROM students s
                  INNER JOIN users u ON u.id = s.user_id
                  WHERE u.enabled = TRUE

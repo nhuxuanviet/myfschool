@@ -1,5 +1,6 @@
 package vn.edu.fpt.myschool.auth.infrastructure.persistence;
 
+import java.sql.Timestamp;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.UUID;
@@ -17,7 +18,10 @@ import vn.edu.fpt.myschool.auth.domain.VietnamesePhoneNumber;
 
 @Component
 @Profile("(dev | e2e) & !prod")
-@Order(100)
+// Runs after HomeDataSeeder(200) has created the academic year: a student's class is now a
+// foreign key, and the class cannot exist before the year it belongs to. Nothing seeded before
+// this point reads students.
+@Order(260)
 class AuthDataSeeder implements ApplicationRunner {
 
     private static final UUID SEEDED_USER_ID =
@@ -37,6 +41,7 @@ class AuthDataSeeder implements ApplicationRunner {
     private final UserJpaRepository userRepository;
     private final StudentJpaRepository studentRepository;
     private final UserRoleGranter userRoleGranter;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
     private final PasswordEncoder passwordEncoder;
     private final AuthSeedProperties properties;
     private final Clock clock;
@@ -45,12 +50,14 @@ class AuthDataSeeder implements ApplicationRunner {
             UserJpaRepository userRepository,
             StudentJpaRepository studentRepository,
             UserRoleGranter userRoleGranter,
+            org.springframework.jdbc.core.JdbcTemplate jdbcTemplate,
             PasswordEncoder passwordEncoder,
             AuthSeedProperties properties,
             Clock clock) {
         this.userRepository = userRepository;
         this.studentRepository = studentRepository;
         this.userRoleGranter = userRoleGranter;
+        this.jdbcTemplate = jdbcTemplate;
         this.passwordEncoder = passwordEncoder;
         this.properties = properties;
         this.clock = clock;
@@ -87,8 +94,33 @@ class AuthDataSeeder implements ApplicationRunner {
                 properties.studentCode(),
                 properties.fullName(),
                 properties.gradeLevel(),
-                properties.className(),
+                classId(properties.className(), properties.gradeLevel()),
                 clock.instant()));
+    }
+
+    /**
+     * Resolves a class code to its row under the latest academic year, creating it when missing.
+     *
+     * <p>The id is derived from year and code the same way V25 derives it, so a database migrated
+     * from older data and a freshly seeded one agree on which row is which class.
+     */
+    private UUID classId(String code, int gradeLevel) {
+        UUID academicYearId = jdbcTemplate.queryForObject(
+                "SELECT id FROM academic_years ORDER BY ends_on DESC, id LIMIT 1", UUID.class);
+        UUID id = jdbcTemplate.queryForObject(
+                "SELECT md5(?::text || ':' || ?)::uuid", UUID.class, academicYearId, code);
+        jdbcTemplate.update("""
+                INSERT INTO school_classes (
+                    id, academic_year_id, code, name, grade_level, enabled, version,
+                    created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, TRUE, 0, ?, ?)
+                ON CONFLICT (academic_year_id, code) DO NOTHING
+                """,
+                id, academicYearId, code, code, gradeLevel,
+                Timestamp.from(clock.instant()), Timestamp.from(clock.instant()));
+        return jdbcTemplate.queryForObject(
+                "SELECT id FROM school_classes WHERE academic_year_id = ? AND code = ?",
+                UUID.class, academicYearId, code);
     }
 
     private void updateStudent(StudentJpaEntity student) {
@@ -96,7 +128,7 @@ class AuthDataSeeder implements ApplicationRunner {
                 properties.studentCode(),
                 properties.fullName(),
                 properties.gradeLevel(),
-                properties.className(),
+                classId(properties.className(), properties.gradeLevel()),
                 clock.instant());
     }
 
@@ -118,7 +150,7 @@ class AuthDataSeeder implements ApplicationRunner {
                     PEER_STUDENT_CODE,
                     PEER_FULL_NAME,
                     PEER_GRADE_LEVEL,
-                    PEER_CLASS_NAME,
+                    classId(PEER_CLASS_NAME, PEER_GRADE_LEVEL),
                     clock.instant()));
         }
     }
