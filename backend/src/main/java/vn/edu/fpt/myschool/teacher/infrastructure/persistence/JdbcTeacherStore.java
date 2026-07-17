@@ -171,6 +171,25 @@ class JdbcTeacherStore implements TeacherStore {
     }
 
     @Override
+    public boolean isAssignedToSubject(
+            UUID teacherId, UUID classId, UUID subjectId, UUID academicTermId) {
+        Integer count = jdbcTemplate.queryForObject(
+                """
+                SELECT count(*) FROM teacher_subject_assignments
+                WHERE teacher_id = :teacherId
+                  AND class_id = :classId
+                  AND subject_id = :subjectId
+                  AND academic_term_id = :academicTermId
+                """,
+                new MapSqlParameterSource("teacherId", teacherId)
+                        .addValue("classId", classId)
+                        .addValue("subjectId", subjectId)
+                        .addValue("academicTermId", academicTermId),
+                Integer.class);
+        return count != null && count > 0;
+    }
+
+    @Override
     public boolean isHomeroomTeacherOf(UUID teacherId, UUID classId) {
         Integer count = jdbcTemplate.queryForObject(
                 """

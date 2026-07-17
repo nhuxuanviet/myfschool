@@ -29,5 +29,13 @@ public interface TeacherStore {
 
     boolean isHomeroomTeacherOf(UUID teacherId, UUID classId);
 
+    /**
+     * True when this teacher is responsible for exactly this subject in this class and term.
+     *
+     * <p>Stricter than {@link #isAssignedToClass}: teaching maths to a class must not let anyone
+     * touch that class's literature grade book.
+     */
+    boolean isAssignedToSubject(UUID teacherId, UUID classId, UUID subjectId, UUID academicTermId);
+
     List<TeacherWorkload.ClassStudent> findClassStudents(UUID classId);
 }

@@ -23,6 +23,14 @@ public final class TeacherException extends ApiException {
                 "This account has no active teacher profile");
     }
 
+    /** Assigned to the class perhaps, but not to this subject in it. */
+    static TeacherException notAssignedToSubject() {
+        return new TeacherException(
+                HttpStatus.FORBIDDEN,
+                "NOT_ASSIGNED_TO_SUBJECT",
+                "You are not assigned to this subject in this class and term");
+    }
+
     /**
      * The teacher asked about a class they hold no assignment for.
      *
