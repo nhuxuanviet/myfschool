@@ -24,6 +24,7 @@ import '../features/profile/presentation/profile_page.dart';
 import '../features/timetable/presentation/timetable_page.dart';
 import '../features/auth/domain/auth_session.dart';
 import '../roles/teacher/presentation/teacher_pages.dart';
+import '../roles/parent/presentation/parent_pages.dart';
 import 'authenticated_shell.dart';
 
 abstract final class AppRoutes {
@@ -52,6 +53,12 @@ abstract final class AppRoutes {
   static const teacherClasses = '/teacher/classes';
   static const teacherGradeBooks = '/teacher/gradebooks';
   static const teacherProfile = '/teacher/profile';
+
+  static const parentOverview = '/parent/overview';
+  static const parentTimetable = '/parent/timetable';
+  static const parentGrades = '/parent/grades';
+  static const parentForms = '/parent/forms';
+  static const parentProfile = '/parent/profile';
 }
 
 abstract final class AppRouteNames {
@@ -77,6 +84,11 @@ abstract final class AppRouteNames {
   static const teacherClasses = 'teacher-classes';
   static const teacherGradeBooks = 'teacher-gradebooks';
   static const teacherProfile = 'teacher-profile';
+  static const parentOverview = 'parent-overview';
+  static const parentTimetable = 'parent-timetable';
+  static const parentGrades = 'parent-grades';
+  static const parentForms = 'parent-forms';
+  static const parentProfile = 'parent-profile';
 }
 
 const _shellLocations = [
@@ -95,7 +107,17 @@ const _teacherShellLocations = [
   AppRoutes.teacherProfile,
 ];
 
+const _parentShellLocations = [
+  AppRoutes.parentOverview,
+  AppRoutes.parentTimetable,
+  AppRoutes.parentGrades,
+  AppRoutes.parentForms,
+  AppRoutes.parentProfile,
+];
+
 bool _isTeacherRoute(String location) => location.startsWith('/teacher/');
+
+bool _isParentRoute(String location) => location.startsWith('/parent/');
 
 GoRouter createAppRouter({
   String initialLocation = AppRoutes.login,
@@ -276,6 +298,42 @@ GoRouter createAppRouter({
           ),
         ],
       ),
+      ShellRoute(
+        builder: (context, state, child) => AuthenticatedShell(
+          location: state.matchedLocation,
+          navigationLocations: _parentShellLocations,
+          onDestinationSelected: (index) =>
+              context.go(_parentShellLocations[index]),
+          child: child,
+        ),
+        routes: [
+          GoRoute(
+            path: AppRoutes.parentOverview,
+            name: AppRouteNames.parentOverview,
+            builder: (context, state) => const ParentOverviewPage(),
+          ),
+          GoRoute(
+            path: AppRoutes.parentTimetable,
+            name: AppRouteNames.parentTimetable,
+            builder: (context, state) => const ParentTimetablePage(),
+          ),
+          GoRoute(
+            path: AppRoutes.parentGrades,
+            name: AppRouteNames.parentGrades,
+            builder: (context, state) => const ParentGradesPage(),
+          ),
+          GoRoute(
+            path: AppRoutes.parentForms,
+            name: AppRouteNames.parentForms,
+            builder: (context, state) => const ParentFormsPage(),
+          ),
+          GoRoute(
+            path: AppRoutes.parentProfile,
+            name: AppRouteNames.parentProfile,
+            builder: (context, state) => const ParentProfilePage(),
+          ),
+        ],
+      ),
     ],
   );
 }
@@ -306,11 +364,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       if (authState.isAuthenticated) {
         // The account decides which app opens. A teacher landing on a student
         // route is not a navigation choice, it is a bug, so send them home.
-        final isTeacher = authState.session?.role == AppRole.teacher;
-        final home = isTeacher ? AppRoutes.teacherOverview : AppRoutes.home;
+        final role = authState.session?.role ?? AppRole.student;
+        final home = switch (role) {
+          AppRole.teacher => AppRoutes.teacherOverview,
+          AppRole.parent => AppRoutes.parentOverview,
+          AppRole.student => AppRoutes.home,
+        };
         if (isPublicRoute) return home;
-        if (isTeacher != _isTeacherRoute(location)) return home;
-        return null;
+        final onOwnShell = switch (role) {
+          AppRole.teacher => _isTeacherRoute(location),
+          AppRole.parent => _isParentRoute(location),
+          AppRole.student =>
+            !_isTeacherRoute(location) && !_isParentRoute(location),
+        };
+        return onOwnShell ? null : home;
       }
       return isPublicRoute && location != AppRoutes.sessionLoading
           ? null
