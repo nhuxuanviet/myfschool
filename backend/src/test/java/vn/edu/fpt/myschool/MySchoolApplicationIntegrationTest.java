@@ -47,7 +47,7 @@ class MySchoolApplicationIntegrationTest {
     @Test
     void startsWithPostgreSqlAndAppliesFlywayMigrations() {
         assertThat(flyway.info().current()).isNotNull();
-        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("26");
+        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("27");
         assertThat(flyway.info().pending()).isEmpty();
 
         Integer appliedBaseline = jdbcTemplate.queryForObject(

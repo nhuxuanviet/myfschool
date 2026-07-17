@@ -17,7 +17,8 @@ public record GradesResponse(
         List<Term> availableTerms,
         List<Subject> subjects) {
 
-    static GradesResponse from(SemesterGrades semesterGrades) {
+    /** Public so the guardian view reports the same shape rather than a parallel one. */
+    public static GradesResponse from(SemesterGrades semesterGrades) {
         return new GradesResponse(
                 SchoolTimeZone.ZONE.getId(),
                 Term.from(semesterGrades.selectedTerm()),

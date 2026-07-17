@@ -95,8 +95,10 @@ public final class AdminIdentity {
     }
 
     /**
-     * @param effectiveTo null while the link is in force. Ended links are kept rather than deleted,
-     *     because who could see a child's data, and until when, is an accountability record.
+     * @param effectiveTo the first day the link no longer applies, or null while it is in force.
+     *     A link that starts and ends on the same day granted nothing, which is what an immediate
+     *     revocation looks like. Ended links are kept rather than deleted, because who could see a
+     *     child's data, and until when, is an accountability record.
      */
     public record GuardianLink(
             UUID id,
@@ -119,8 +121,8 @@ public final class AdminIdentity {
             if (contactOrder < 1) {
                 throw new IllegalArgumentException("contactOrder must be at least 1");
             }
-            if (effectiveTo != null && !effectiveTo.isAfter(effectiveFrom)) {
-                throw new IllegalArgumentException("effectiveTo must be after effectiveFrom");
+            if (effectiveTo != null && effectiveTo.isBefore(effectiveFrom)) {
+                throw new IllegalArgumentException("effectiveTo must not precede effectiveFrom");
             }
         }
 

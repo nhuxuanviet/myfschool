@@ -55,12 +55,24 @@ public class GradesService {
         UUID userId = parseAuthenticatedUserId(authenticatedUserId);
         StudentProfile student = studentProfileStore.findByUserId(userId)
                 .orElseThrow(GradesException::studentProfileNotFound);
-        List<GradeTerm> availableTerms = gradesStore.findAvailableTerms(student.id()).stream()
+        return getSemesterGradesOf(student.id(), requestedTermId);
+    }
+
+    /**
+     * The same report card, for a student already established as the caller's to see.
+     *
+     * <p>Takes a student id because a guardian is not the student. The check that the caller may
+     * see this student belongs to whoever calls this, and the publication rule stays inside the
+     * one query both paths share rather than being restated per caller.
+     */
+    @Transactional(readOnly = true)
+    public SemesterGrades getSemesterGradesOf(UUID studentId, UUID requestedTermId) {
+        List<GradeTerm> availableTerms = gradesStore.findAvailableTerms(studentId).stream()
                 .sorted(TERM_NEWEST_FIRST)
                 .toList();
         GradeTerm selectedTerm = selectTerm(availableTerms, requestedTermId);
         List<SemesterGradeSubject> subjects = gradesStore
-                .findSubjectEnrollments(student.id(), selectedTerm.id())
+                .findSubjectEnrollments(studentId, selectedTerm.id())
                 .stream()
                 .sorted(Comparator
                         .comparingInt(GradeSubjectEnrollment::displayOrder)

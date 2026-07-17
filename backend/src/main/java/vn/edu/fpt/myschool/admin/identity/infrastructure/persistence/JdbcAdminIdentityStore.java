@@ -321,7 +321,7 @@ class JdbcAdminIdentityStore implements AdminIdentityStore {
                 """
                 UPDATE parent_student_links
                 SET effective_to = ?, updated_at = ?
-                WHERE id = ? AND effective_to IS NULL AND effective_from < ?
+                WHERE id = ? AND effective_to IS NULL AND effective_from <= ?
                 """,
                 java.sql.Date.valueOf(effectiveTo), Timestamp.from(now), linkId,
                 java.sql.Date.valueOf(effectiveTo)) == 1;

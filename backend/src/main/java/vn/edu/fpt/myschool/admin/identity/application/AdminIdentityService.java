@@ -159,15 +159,15 @@ public class AdminIdentityService {
     }
 
     /**
-     * Ends a link from tomorrow.
+     * Ends a link today, taking access away immediately.
      *
-     * <p>The schema requires effective_to to be after effective_from, and a link created today
-     * cannot be ended today without violating that. Ending tomorrow also matches what the date
-     * means: the guardian did hold the relationship for the whole of today.
+     * <p>Not tomorrow: a guardianship can have to end the moment it is revoked, and delaying that
+     * by a day is not acceptable for a child's data. effective_to is the first day the link no
+     * longer applies, so today means gone now.
      */
     @Transactional
     public void unlinkGuardian(UUID actorUserId, UUID linkId) {
-        LocalDate endsOn = LocalDate.ofInstant(clock.instant(), SchoolTimeZone.ZONE).plusDays(1);
+        LocalDate endsOn = LocalDate.ofInstant(clock.instant(), SchoolTimeZone.ZONE);
         if (!store.endLink(linkId, endsOn, clock.instant())) {
             throw AdminIdentityException.linkNotInForce();
         }
