@@ -85,6 +85,7 @@ class RoleIsolationIntegrationTest {
     @Test
     void parentCannotReachTheTeacherNamespace() throws Exception {
         expectForbidden("/api/v1/teacher/classes", UserRole.PARENT);
+        expectForbidden("/api/v1/teacher/schedule", UserRole.PARENT);
     }
 
     @Test
@@ -123,13 +124,17 @@ class RoleIsolationIntegrationTest {
      * {@code denyAll()} and answer 403 — which would make the tests above pass for the wrong
      * reason. A role that owns the namespace must get past authorisation and fail later, on the
      * missing handler, so 404 here is the evidence that the rule itself is doing the work.
+     *
+     * <p>Deliberately aimed at paths with no handler. Once a namespace grows real endpoints the
+     * trick stops working there, and the stronger proof moves to those endpoints' own tests,
+     * where a wrong role gets 403 and the right one gets data.
      */
     @Test
     void aRoleReachesItsOwnNamespaceAndOnlyMissesTheEndpoint() throws Exception {
-        mockMvc.perform(get("/api/v1/teacher/classes")
+        mockMvc.perform(get("/api/v1/teacher/no-such-endpoint")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenFor(UserRole.TEACHER)))
                 .andExpect(status().isNotFound());
-        mockMvc.perform(get("/api/v1/parent/children")
+        mockMvc.perform(get("/api/v1/parent/no-such-endpoint")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenFor(UserRole.PARENT)))
                 .andExpect(status().isNotFound());
     }
