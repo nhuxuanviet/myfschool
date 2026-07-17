@@ -171,6 +171,9 @@ class HomeIntegrationTest {
     @Test
     void returnsANullAcademicTermWhenNoTermIsActive() throws Exception {
         jdbcTemplate.update("DELETE FROM grade_assessments");
+        // Grade books point at the term with RESTRICT, so they have to go before it does.
+        // Columns and any remaining marks cascade from the book.
+        jdbcTemplate.update("DELETE FROM grade_books");
         jdbcTemplate.update("DELETE FROM student_term_subjects");
         jdbcTemplate.update("DELETE FROM timetable_overrides");
         jdbcTemplate.update("DELETE FROM class_timetable_entries");

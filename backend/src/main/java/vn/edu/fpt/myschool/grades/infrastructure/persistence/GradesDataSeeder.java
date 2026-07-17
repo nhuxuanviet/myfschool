@@ -276,14 +276,17 @@ class GradesDataSeeder implements ApplicationRunner {
             Instant now) {
         jdbcTemplate.update("""
                 INSERT INTO grade_assessments (
-                    id, student_term_subject_id, assessment_mode, assessment_kind, assessment_form,
+                    id, student_term_subject_id, grade_column_id, assessment_mode,
+                    assessment_kind, assessment_form,
                     display_label, duration_minutes, status, score, outcome, assessed_on,
                     display_order, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT (id) DO NOTHING
                 """,
                 seededIdentifier(identifier),
                 enrollmentId,
+                gradeColumnId(enrollmentId, kind, form, displayLabel, durationMinutes,
+                        displayOrder, now),
                 assessmentMode,
                 kind,
                 form,
@@ -296,6 +299,67 @@ class GradesDataSeeder implements ApplicationRunner {
                 displayOrder,
                 Timestamp.from(now),
                 Timestamp.from(now));
+    }
+
+    /**
+     * Resolves the grade column a seeded mark belongs to, creating the book and column on first
+     * sight.
+     *
+     * <p>Ids are derived exactly as V26 derives them, so a database migrated from older data and a
+     * freshly seeded one agree on which row is which book and which column.
+     *
+     * <p>Seeded books are published: the student app has always shown these marks, and introducing
+     * the publish gate must not blank it.
+     */
+    private UUID gradeColumnId(
+            UUID enrollmentId,
+            String kind,
+            String form,
+            String displayLabel,
+            Integer durationMinutes,
+            int displayOrder,
+            Instant now) {
+        jdbcTemplate.update("""
+                INSERT INTO grade_books (
+                    id, class_id, subject_id, academic_term_id, published_at, version,
+                    created_at, updated_at
+                )
+                SELECT md5('grade-book:' || student.class_id::text || ':'
+                           || term_subject.subject_id::text || ':'
+                           || term_subject.academic_term_id::text)::uuid,
+                       student.class_id, term_subject.subject_id, term_subject.academic_term_id,
+                       ?, 0, ?, ?
+                FROM student_term_subjects term_subject
+                INNER JOIN students student ON student.id = term_subject.student_id
+                WHERE term_subject.id = ? AND student.class_id IS NOT NULL
+                ON CONFLICT (class_id, subject_id, academic_term_id) DO NOTHING
+                """,
+                Timestamp.from(now), Timestamp.from(now), Timestamp.from(now), enrollmentId);
+        UUID bookId = jdbcTemplate.queryForObject("""
+                SELECT book.id
+                FROM student_term_subjects term_subject
+                INNER JOIN students student ON student.id = term_subject.student_id
+                INNER JOIN grade_books book
+                    ON book.class_id = student.class_id
+                    AND book.subject_id = term_subject.subject_id
+                    AND book.academic_term_id = term_subject.academic_term_id
+                WHERE term_subject.id = ?
+                """, UUID.class, enrollmentId);
+        jdbcTemplate.update("""
+                INSERT INTO grade_columns (
+                    id, grade_book_id, assessment_kind, assessment_form, display_label,
+                    duration_minutes, display_order, created_at, updated_at
+                ) VALUES (
+                    md5('grade-column:' || ?::text || ':' || ?::text)::uuid,
+                    ?, ?, ?, ?, ?, ?, ?, ?
+                )
+                ON CONFLICT (grade_book_id, display_order) DO NOTHING
+                """,
+                bookId, displayOrder, bookId, kind, form, displayLabel, durationMinutes,
+                displayOrder, Timestamp.from(now), Timestamp.from(now));
+        return jdbcTemplate.queryForObject(
+                "SELECT id FROM grade_columns WHERE grade_book_id = ? AND display_order = ?",
+                UUID.class, bookId, displayOrder);
     }
 
     private static UUID seededIdentifier(int identifier) {
