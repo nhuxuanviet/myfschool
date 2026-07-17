@@ -64,6 +64,12 @@ public class TeacherGradeBookController {
     public record VersionedRequest(@NotNull @PositiveOrZero Long version) {
     }
 
+    public record ChangeRequestBody(
+            @DecimalMin("0.0") @DecimalMax("10.0") BigDecimal newScore,
+            @Size(max = 16) String newOutcome,
+            @NotBlank @Size(max = 500) String reason) {
+    }
+
     public record BookResponse(
             UUID id,
             UUID classId,
@@ -133,6 +139,18 @@ public class TeacherGradeBookController {
             @Valid @RequestBody RecordMarkRequest request) {
         service.recordMark(userId(jwt), assessmentId, request.score(), request.outcome());
         return ResponseEntity.noContent().build();
+    }
+
+    /** For a locked book only: an open book is edited directly. */
+    @PostMapping("/marks/{assessmentId}/change-requests")
+    public ResponseEntity<CreatedResponse> requestChange(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable UUID assessmentId,
+            @Valid @RequestBody ChangeRequestBody request) {
+        UUID id = service.requestChange(
+                userId(jwt), assessmentId, request.newScore(), request.newOutcome(),
+                request.reason());
+        return ResponseEntity.status(201).body(new CreatedResponse(id));
     }
 
     @PostMapping("/{bookId}/publish")

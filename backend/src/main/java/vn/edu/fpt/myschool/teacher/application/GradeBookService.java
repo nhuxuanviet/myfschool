@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import vn.edu.fpt.myschool.admin.grades.application.GradeGovernanceService;
 import vn.edu.fpt.myschool.teacher.application.port.GradeBookStore;
 import vn.edu.fpt.myschool.teacher.application.port.TeacherStore;
 import vn.edu.fpt.myschool.teacher.domain.GradeBookView;
@@ -23,17 +24,45 @@ public class GradeBookService {
     private final GradeBookStore store;
     private final TeacherStore teacherStore;
     private final TeacherService teacherService;
+    private final GradeGovernanceService governanceService;
     private final Clock clock;
 
     public GradeBookService(
             GradeBookStore store,
             TeacherStore teacherStore,
             TeacherService teacherService,
+            GradeGovernanceService governanceService,
             Clock clock) {
         this.store = store;
         this.teacherStore = teacherStore;
         this.teacherService = teacherService;
+        this.governanceService = governanceService;
         this.clock = clock;
+    }
+
+    /**
+     * Asks the administration to correct a mark in a locked book.
+     *
+     * <p>Only for locked books: while the book is open the teacher simply edits it, and routing
+     * that through an approval queue would train everyone to rubber-stamp.
+     */
+    @Transactional
+    public UUID requestChange(
+            UUID userId,
+            UUID assessmentId,
+            java.math.BigDecimal newScore,
+            String newOutcome,
+            String reason) {
+        UUID bookId = store.findBookIdByAssessment(assessmentId)
+                .orElseThrow(GradeBookException::notFound);
+        GradeBookView.Book book = requireOwnBook(userId, bookId);
+        if (!book.isLocked()) {
+            throw GradeBookException.notLocked();
+        }
+        if ((newScore == null) == (newOutcome == null)) {
+            throw GradeBookException.wrongResultForMode();
+        }
+        return governanceService.requestChange(userId, assessmentId, newScore, newOutcome, reason);
     }
 
     /** Opens the book for a class-subject-term, creating it the first time the teacher asks. */

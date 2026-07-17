@@ -28,6 +28,14 @@ public final class GradeBookException extends ApiException {
                 "Grade book is locked. Submit a grade-change request instead");
     }
 
+    /** The book is open, so the teacher can just edit it. */
+    static GradeBookException notLocked() {
+        return new GradeBookException(
+                HttpStatus.CONFLICT,
+                "GRADE_BOOK_NOT_LOCKED",
+                "Grade book is still open. Edit the mark directly instead of requesting a change");
+    }
+
     static GradeBookException stale() {
         return new GradeBookException(
                 HttpStatus.CONFLICT,
