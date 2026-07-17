@@ -64,8 +64,23 @@ class JdbcGradesStore implements GradesStore {
                    assessment.display_order AS assessment_display_order
             FROM student_term_subjects enrollment
             INNER JOIN subjects subject ON subject.id = enrollment.subject_id
+            -- A mark reaches the student only once its grade book has been published, and
+            -- only once it actually holds a value. PENDING is the teacher's own "not entered
+            -- yet"; there is nothing to show and it is not the student's business.
+            --
+            -- Both conditions belong in the join, not a WHERE clause: a subject whose book is
+            -- still unpublished must keep its row and simply carry no marks, rather than
+            -- vanish from the report card.
             LEFT JOIN grade_assessments assessment
                 ON assessment.student_term_subject_id = enrollment.id
+                AND assessment.status <> 'PENDING'
+                AND EXISTS (
+                    SELECT 1
+                    FROM grade_columns grade_column
+                    INNER JOIN grade_books book ON book.id = grade_column.grade_book_id
+                    WHERE grade_column.id = assessment.grade_column_id
+                      AND book.published_at IS NOT NULL
+                )
             WHERE enrollment.student_id = :studentId
               AND enrollment.academic_term_id = :academicTermId
             ORDER BY enrollment.display_order ASC,
