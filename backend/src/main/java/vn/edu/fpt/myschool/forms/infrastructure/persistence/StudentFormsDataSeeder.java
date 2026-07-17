@@ -148,8 +148,10 @@ class StudentFormsDataSeeder implements ApplicationRunner {
         jdbcTemplate.update("""
                 INSERT INTO student_forms (
                     id, student_id, form_type, reason, starts_on, ends_on, status,
-                    submitted_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    submitted_by, submitted_by_role, submitted_at, updated_at
+                )
+                SELECT ?, ?, ?, ?, ?, ?, ?, student.user_id, 'STUDENT', ?, ?
+                FROM students student WHERE student.id = ?
                 ON CONFLICT (id) DO NOTHING
                 """,
                 id,
@@ -160,7 +162,8 @@ class StudentFormsDataSeeder implements ApplicationRunner {
                 endsOn,
                 status.name(),
                 Timestamp.from(submittedAt),
-                Timestamp.from(updatedAt));
+                Timestamp.from(updatedAt),
+                studentId);
     }
 
     private void insertHistory(
