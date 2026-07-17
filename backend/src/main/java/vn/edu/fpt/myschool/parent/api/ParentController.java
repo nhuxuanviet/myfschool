@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import vn.edu.fpt.myschool.grades.api.GradesResponse;
+import vn.edu.fpt.myschool.timetable.api.TimetableResponse;
 import vn.edu.fpt.myschool.parent.application.ParentService;
 import vn.edu.fpt.myschool.parent.domain.ParentChild;
 
@@ -58,6 +59,17 @@ public class ParentController {
             @PathVariable UUID studentId,
             @RequestParam(required = false) UUID termId) {
         return GradesResponse.from(service.getChildGrades(userId(jwt), studentId, termId));
+    }
+
+    @GetMapping("/children/{studentId}/timetable")
+    public TimetableResponse getChildTimetable(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable UUID studentId,
+            @RequestParam(required = false)
+            @org.springframework.format.annotation.DateTimeFormat(
+                    iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+            java.time.LocalDate weekStart) {
+        return TimetableResponse.from(service.getChildTimetable(userId(jwt), studentId, weekStart));
     }
 
     private static UUID userId(Jwt jwt) {

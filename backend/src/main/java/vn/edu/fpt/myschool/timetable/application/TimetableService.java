@@ -60,6 +60,18 @@ public class TimetableService {
         UUID userId = parseAuthenticatedUserId(authenticatedUserId);
         StudentProfile student = studentProfileStore.findByUserId(userId)
                 .orElseThrow(TimetableException::studentProfileNotFound);
+        return getTimetableOfClass(student.className(), requestedWeekStart);
+    }
+
+    /**
+     * The same week, for a class the caller has already been established as entitled to see.
+     *
+     * <p>Takes a class code because a guardian is not the student. Whether the caller may look at
+     * this class is the caller's business to prove; the timetable itself is the same one either
+     * way, so there is only one place it can drift.
+     */
+    @Transactional(readOnly = true)
+    public Timetable getTimetableOfClass(String className, LocalDate requestedWeekStart) {
         LocalDate weekStart = resolveWeekStart(requestedWeekStart);
         LocalDate weekEnd = weekStart.plusDays(6);
 
@@ -74,7 +86,7 @@ public class TimetableService {
         for (TimetableTerm term : academicTerms) {
             for (TimetableLessonOccurrence occurrence : timetableStore.findLessons(
                     term.id(),
-                    student.className(),
+                    className,
                     weekStart,
                     weekEnd)) {
                 // PostgreSQL prevents overlaps within an academic year. This map

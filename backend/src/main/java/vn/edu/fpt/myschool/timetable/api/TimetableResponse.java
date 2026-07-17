@@ -20,7 +20,8 @@ public record TimetableResponse(
 
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
-    static TimetableResponse from(Timetable timetable) {
+    /** Public so the guardian view reports the same shape rather than a parallel one. */
+    public static TimetableResponse from(Timetable timetable) {
         return new TimetableResponse(
                 SchoolTimeZone.ZONE.getId(),
                 timetable.weekStart(),

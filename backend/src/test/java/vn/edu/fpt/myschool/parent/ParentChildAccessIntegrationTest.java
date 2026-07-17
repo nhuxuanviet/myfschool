@@ -204,6 +204,23 @@ class ParentChildAccessIntegrationTest {
     }
 
     @Test
+    void readsTheTimetableOfTheirOwnChild() throws Exception {
+        mockMvc.perform(get("/api/v1/parent/children/" + ownChildId + "/timetable")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.days").isArray());
+    }
+
+    /** The class code is never taken from the caller: it comes from the child the link names. */
+    @Test
+    void refusesTheTimetableOfAStudentTheyAreNotLinkedTo() throws Exception {
+        mockMvc.perform(get("/api/v1/parent/children/" + otherChildId + "/timetable")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token()))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("NOT_LINKED_TO_STUDENT"));
+    }
+
+    @Test
     void aStudentCannotReachTheParentNamespace() throws Exception {
         String studentToken = authService
                 .login("0912345678", "Student@123", UserRole.STUDENT)
