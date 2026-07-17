@@ -65,7 +65,7 @@ void main() {
         password: 'secret-password',
       );
 
-      expect(session.student.fullName, 'Nguyễn Văn A');
+      expect(session.requireStudent.fullName, 'Nguyễn Văn A');
       expect(session.tokens.expiresAt, now.add(const Duration(hours: 1)));
       final request = verify(
         () => apiClient.postJson(

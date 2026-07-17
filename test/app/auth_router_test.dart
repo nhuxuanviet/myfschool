@@ -90,7 +90,7 @@ ProviderContainer _container(FakeAuthRepository repository) {
       homeDashboardProvider.overrideWith(
         (ref) async => testHomeDashboard(
           fullName:
-              repository.restoredSession?.student.fullName ?? 'Nguyễn Văn A',
+              repository.restoredSession?.requireStudent.fullName ?? 'Nguyễn Văn A',
         ),
       ),
       healthCheckProvider.overrideWith(

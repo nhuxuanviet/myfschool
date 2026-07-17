@@ -21,7 +21,7 @@ class HomePage extends ConsumerWidget {
       _ => const AuthState(),
     };
     final dashboard = ref.watch(homeDashboardProvider);
-    final fallbackName = authState.session?.student.fullName ?? 'Học sinh';
+    final fallbackName = authState.session?.requireStudent.fullName ?? 'Học sinh';
 
     return Semantics(
       label: 'Trang chủ',

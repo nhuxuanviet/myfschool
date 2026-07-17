@@ -22,6 +22,8 @@ import '../features/home/presentation/home_page.dart';
 import '../features/notifications/presentation/notifications_page.dart';
 import '../features/profile/presentation/profile_page.dart';
 import '../features/timetable/presentation/timetable_page.dart';
+import '../features/auth/domain/auth_session.dart';
+import '../roles/teacher/presentation/teacher_pages.dart';
 import 'authenticated_shell.dart';
 
 abstract final class AppRoutes {
@@ -42,6 +44,14 @@ abstract final class AppRoutes {
   static const assistant = '/assistant';
   static const notifications = '/notifications';
   static const more = '/more';
+
+  // A teacher account opens its own shell. The paths are separate so a screen
+  // built for one role cannot quietly end up in another role's tab bar.
+  static const teacherOverview = '/teacher/overview';
+  static const teacherSchedule = '/teacher/schedule';
+  static const teacherClasses = '/teacher/classes';
+  static const teacherGradeBooks = '/teacher/gradebooks';
+  static const teacherProfile = '/teacher/profile';
 }
 
 abstract final class AppRouteNames {
@@ -62,6 +72,11 @@ abstract final class AppRouteNames {
   static const assistant = 'assistant';
   static const notifications = 'notifications';
   static const more = 'more';
+  static const teacherOverview = 'teacher-overview';
+  static const teacherSchedule = 'teacher-schedule';
+  static const teacherClasses = 'teacher-classes';
+  static const teacherGradeBooks = 'teacher-gradebooks';
+  static const teacherProfile = 'teacher-profile';
 }
 
 const _shellLocations = [
@@ -71,6 +86,16 @@ const _shellLocations = [
   AppRoutes.events,
   AppRoutes.more,
 ];
+
+const _teacherShellLocations = [
+  AppRoutes.teacherOverview,
+  AppRoutes.teacherSchedule,
+  AppRoutes.teacherClasses,
+  AppRoutes.teacherGradeBooks,
+  AppRoutes.teacherProfile,
+];
+
+bool _isTeacherRoute(String location) => location.startsWith('/teacher/');
 
 GoRouter createAppRouter({
   String initialLocation = AppRoutes.login,
@@ -215,6 +240,42 @@ GoRouter createAppRouter({
           ),
         ],
       ),
+      ShellRoute(
+        builder: (context, state, child) => AuthenticatedShell(
+          location: state.matchedLocation,
+          navigationLocations: _teacherShellLocations,
+          onDestinationSelected: (index) =>
+              context.go(_teacherShellLocations[index]),
+          child: child,
+        ),
+        routes: [
+          GoRoute(
+            path: AppRoutes.teacherOverview,
+            name: AppRouteNames.teacherOverview,
+            builder: (context, state) => const TeacherOverviewPage(),
+          ),
+          GoRoute(
+            path: AppRoutes.teacherSchedule,
+            name: AppRouteNames.teacherSchedule,
+            builder: (context, state) => const TeacherSchedulePage(),
+          ),
+          GoRoute(
+            path: AppRoutes.teacherClasses,
+            name: AppRouteNames.teacherClasses,
+            builder: (context, state) => const TeacherClassesPage(),
+          ),
+          GoRoute(
+            path: AppRoutes.teacherGradeBooks,
+            name: AppRouteNames.teacherGradeBooks,
+            builder: (context, state) => const TeacherGradeBooksPage(),
+          ),
+          GoRoute(
+            path: AppRoutes.teacherProfile,
+            name: AppRouteNames.teacherProfile,
+            builder: (context, state) => const TeacherProfilePage(),
+          ),
+        ],
+      ),
     ],
   );
 }
@@ -243,7 +304,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         _ => const AuthState(),
       };
       if (authState.isAuthenticated) {
-        return isPublicRoute ? AppRoutes.home : null;
+        // The account decides which app opens. A teacher landing on a student
+        // route is not a navigation choice, it is a bug, so send them home.
+        final isTeacher = authState.session?.role == AppRole.teacher;
+        final home = isTeacher ? AppRoutes.teacherOverview : AppRoutes.home;
+        if (isPublicRoute) return home;
+        if (isTeacher != _isTeacherRoute(location)) return home;
+        return null;
       }
       return isPublicRoute && location != AppRoutes.sessionLoading
           ? null

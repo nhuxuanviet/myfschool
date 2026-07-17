@@ -19,7 +19,7 @@ void main() {
     final state = await container.read(authControllerProvider.future);
 
     expect(state.isAuthenticated, isTrue);
-    expect(state.session?.student.fullName, 'Lê Hà My');
+    expect(state.session?.requireStudent.fullName, 'Lê Hà My');
   });
 
   test('maps login ProblemDetail and does not create a session', () async {

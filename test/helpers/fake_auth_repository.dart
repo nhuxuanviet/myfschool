@@ -7,6 +7,7 @@ AuthSession testAuthSession({
   String refreshToken = 'refresh-token',
   String? sessionId,
   String fullName = 'Nguyễn Văn A',
+  AppRole role = AppRole.student,
 }) {
   return AuthSession(
     sessionId: sessionId ?? refreshToken,
@@ -15,13 +16,17 @@ AuthSession testAuthSession({
       refreshToken: refreshToken,
       expiresAt: DateTime.utc(2099),
     ),
-    student: StudentSummary(
-      id: 'student-id',
-      studentCode: 'HS001',
-      fullName: fullName,
-      gradeLevel: 10,
-      className: '10A1',
-    ),
+    role: role,
+    // Only a student session carries a student profile.
+    student: role == AppRole.student
+        ? StudentSummary(
+            id: 'student-id',
+            studentCode: 'HS001',
+            fullName: fullName,
+            gradeLevel: 10,
+            className: '10A1',
+          )
+        : null,
   );
 }
 

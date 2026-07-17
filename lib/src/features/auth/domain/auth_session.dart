@@ -78,11 +78,36 @@ class AuthTokens {
   };
 }
 
+/// Which app a signed-in account opens into.
+///
+/// The account decides this, not the person: a phone number issued to a teacher
+/// signs in as a teacher. There is no role picker.
+enum AppRole {
+  student,
+  teacher,
+  parent;
+
+  static AppRole fromName(String value) {
+    return switch (value.toUpperCase()) {
+      'TEACHER' => AppRole.teacher,
+      'PARENT' => AppRole.parent,
+      _ => AppRole.student,
+    };
+  }
+
+  String get wireName => switch (this) {
+    AppRole.student => 'STUDENT',
+    AppRole.teacher => 'TEACHER',
+    AppRole.parent => 'PARENT',
+  };
+}
+
 class AuthSession {
   const AuthSession({
     required this.sessionId,
     required this.tokens,
-    required this.student,
+    required this.role,
+    this.student,
   });
 
   factory AuthSession.fromLoginJson(
@@ -90,49 +115,81 @@ class AuthSession {
     required DateTime now,
     String? sessionId,
   }) {
+    final tokens = AuthTokens.fromApiJson(json, now: now);
+    final role = AppRole.fromName(json['activeRole']?.toString() ?? 'STUDENT');
     final studentJson = json['student'];
-    if (studentJson is! Map) {
+    // Only a student session carries a student profile. A teacher or guardian
+    // session legitimately has none, and demanding one here is what would make
+    // their sign-in fail on a field they were never going to have.
+    if (role == AppRole.student && studentJson is! Map) {
       throw const FormatException('Missing student profile.');
     }
-    final tokens = AuthTokens.fromApiJson(json, now: now);
     return AuthSession(
       sessionId: sessionId ?? tokens.refreshToken,
       tokens: tokens,
-      student: StudentSummary.fromJson(Map<String, dynamic>.from(studentJson)),
+      role: role,
+      student: studentJson is Map
+          ? StudentSummary.fromJson(Map<String, dynamic>.from(studentJson))
+          : null,
     );
   }
 
   factory AuthSession.fromStorageJson(Map<String, dynamic> json) {
     final tokenJson = json['tokens'];
-    final studentJson = json['student'];
-    if (tokenJson is! Map || studentJson is! Map) {
+    if (tokenJson is! Map) {
       throw const FormatException('Invalid stored authentication session.');
     }
     final tokens = AuthTokens.fromStorageJson(
       Map<String, dynamic>.from(tokenJson),
     );
+    final role = AppRole.fromName(json['role']?.toString() ?? 'STUDENT');
+    final studentJson = json['student'];
+    if (role == AppRole.student && studentJson is! Map) {
+      throw const FormatException('Invalid stored authentication session.');
+    }
     final storedSessionId = json['sessionId']?.toString().trim();
     return AuthSession(
       sessionId: storedSessionId == null || storedSessionId.isEmpty
           ? tokens.refreshToken
           : storedSessionId,
       tokens: tokens,
-      student: StudentSummary.fromJson(Map<String, dynamic>.from(studentJson)),
+      role: role,
+      student: studentJson is Map
+          ? StudentSummary.fromJson(Map<String, dynamic>.from(studentJson))
+          : null,
     );
   }
 
   final String sessionId;
   final AuthTokens tokens;
-  final StudentSummary student;
+  final AppRole role;
+
+  /// Null for a teacher or guardian session.
+  final StudentSummary? student;
+
+  /// The student of a student session. Calling this on another role is a bug.
+  StudentSummary get requireStudent {
+    final value = student;
+    if (value == null) {
+      throw StateError('This session is not a student session.');
+    }
+    return value;
+  }
 
   AuthSession copyWithTokens(AuthTokens value) {
-    return AuthSession(sessionId: sessionId, tokens: value, student: student);
+    return AuthSession(
+      sessionId: sessionId,
+      tokens: value,
+      role: role,
+      student: student,
+    );
   }
 
   Map<String, dynamic> toStorageJson() => {
     'sessionId': sessionId,
     'tokens': tokens.toStorageJson(),
-    'student': student.toJson(),
+    'role': role.wireName,
+    if (student != null) 'student': student!.toJson(),
   };
 }
 
